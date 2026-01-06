@@ -5,6 +5,7 @@ import Editor from './components/Editor';
 import { generatePolaroidStory } from './services/geminiService';
 import { ReceiptData, PolaroidData, HiddenContentItem } from './types';
 import { Edit2, Share2, Printer, ExternalLink } from 'lucide-react';
+import LZString from 'lz-string';
 
 const DEFAULT_RECEIPT: ReceiptData = {
   dateRange: "2006.02.09 - 2026.02.09",
@@ -65,28 +66,59 @@ const DEFAULT_RECEIPT: ReceiptData = {
   ]
 };
 
-// Helper for Unicode-safe Base64 Encoding
-const toBase64 = (str: string) => {
-  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-    (match, p1) => String.fromCharCode(parseInt(p1, 16)))
-  );
-};
+// --- DATA SERIALIZATION UTILS ---
 
-// Helper for Unicode-safe Base64 Decoding with robustness fixes
-const fromBase64 = (str: string) => {
+// Legacy: Unicode-safe Base64 Decoding (for backward compatibility)
+const fromBase64Legacy = (str: string) => {
   try {
-    // Fix for URLSearchParams potentially decoding '+' as space
     let safeStr = str.replace(/ /g, '+');
-    // Ensure padding is correct
-    while (safeStr.length % 4) {
-      safeStr += '=';
-    }
+    while (safeStr.length % 4) safeStr += '=';
     return decodeURIComponent(atob(safeStr).split('').map(function(c) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
   } catch (e) {
-    console.error("Base64 decoding failed:", e);
-    throw new Error("Invalid config string");
+    console.error("Legacy decode failed:", e);
+    return null;
+  }
+};
+
+// New: Clean and Compress Data
+const compressData = (data: ReceiptData): string => {
+  // 1. Minify: Remove deprecated/empty fields to save space
+  const cleanData = { ...data };
+  delete cleanData.hiddenStory; // Remove legacy
+  delete cleanData.hiddenImage; // Remove legacy
+  
+  if (cleanData.hiddenContent) {
+    // Filter out empty items
+    cleanData.hiddenContent = cleanData.hiddenContent.filter(
+        i => i.content && i.content.trim() !== ""
+    );
+    // If empty array, remove it
+    if (cleanData.hiddenContent.length === 0) delete cleanData.hiddenContent;
+  }
+
+  // 2. Compress
+  const jsonString = JSON.stringify(cleanData);
+  return LZString.compressToEncodedURIComponent(jsonString);
+};
+
+const decompressData = (str: string): ReceiptData | null => {
+  try {
+    // Try decompressing first
+    const decompressed = LZString.decompressFromEncodedURIComponent(str);
+    if (decompressed) {
+      return JSON.parse(decompressed);
+    }
+    // If null/empty, it might be a legacy Base64 string
+    const legacy = fromBase64Legacy(str);
+    if (legacy) {
+      return JSON.parse(legacy);
+    }
+    return null;
+  } catch (e) {
+    console.error("Decompression failed", e);
+    return null;
   }
 };
 
@@ -110,7 +142,10 @@ const App: React.FC = () => {
         const hashParams = new URLSearchParams(hash);
         if (hashParams.has('config')) {
             configStr = hashParams.get('config') || "";
-        } 
+        } else if (hashParams.has('d')) {
+            // Short alias 'd' for data
+            configStr = hashParams.get('d') || "";
+        }
         // Try Query Params (Legacy / Fallback)
         else {
             const searchParams = new URLSearchParams(window.location.search);
@@ -121,34 +156,32 @@ const App: React.FC = () => {
         }
         
         if (configStr) {
-            const decoded: ReceiptData = JSON.parse(fromBase64(configStr));
+            const decoded = decompressData(configStr);
             
-            // --- Migration Logic for Old Data Format ---
-            // Convert old hiddenStory/hiddenImage to hiddenContent array if missing
-            if (!decoded.hiddenContent && (decoded.hiddenStory || decoded.hiddenImage)) {
-                decoded.hiddenContent = [];
-                if (decoded.hiddenImage) {
-                    decoded.hiddenContent.push({ id: 'mig-img', type: 'image', content: decoded.hiddenImage });
+            if (decoded) {
+                // --- Migration Logic for Old Data Format ---
+                if (!decoded.hiddenContent && (decoded.hiddenStory || decoded.hiddenImage)) {
+                    decoded.hiddenContent = [];
+                    if (decoded.hiddenImage) {
+                        decoded.hiddenContent.push({ id: 'mig-img', type: 'image', content: decoded.hiddenImage });
+                    }
+                    if (decoded.hiddenStory) {
+                        decoded.hiddenContent.push({ id: 'mig-txt', type: 'text', content: decoded.hiddenStory });
+                    }
                 }
-                if (decoded.hiddenStory) {
-                    decoded.hiddenContent.push({ id: 'mig-txt', type: 'text', content: decoded.hiddenStory });
-                }
-            }
-            // -------------------------------------------
+                // -------------------------------------------
 
-            setReceiptData(decoded);
-            setIsPrinting(true);
-            setTimeout(() => setIsPrinting(false), 1600);
+                setReceiptData(decoded);
+                setIsPrinting(true);
+                setTimeout(() => setIsPrinting(false), 1600);
 
-            // If we loaded from legacy query params, migrate to hash immediately to fix the URL
-            if (isLegacyQuery && window.location.protocol !== 'blob:') {
-                try {
-                  const url = new URL(window.location.href);
-                  url.search = ""; // Remove query params
-                  url.hash = `config=${encodeURIComponent(configStr)}`;
-                  window.history.replaceState(null, '', url.toString());
-                } catch (err) {
-                  console.error("Failed to migrate URL:", err);
+                // If loaded from legacy query, clean URL
+                if (isLegacyQuery && window.location.protocol !== 'blob:') {
+                    const newHash = `d=${compressData(decoded)}`;
+                    const url = new URL(window.location.href);
+                    url.search = ""; 
+                    url.hash = newHash;
+                    window.history.replaceState(null, '', url.toString());
                 }
             }
         }
@@ -246,17 +279,13 @@ const App: React.FC = () => {
 
   const handleSave = async () => {
       try {
-        // 1. Serialize data
-        const jsonString = JSON.stringify(receiptData);
-        // 2. Base64 Encode (Unicode safe)
-        const encoded = toBase64(jsonString);
-        // 3. URL Encode (to protect +, /, = characters)
-        const urlSafeEncoded = encodeURIComponent(encoded);
-        const hashString = `config=${urlSafeEncoded}`;
+        // 1. Clean & Compress (Use 'd' for data to save chars)
+        const compressed = compressData(receiptData);
+        const hashString = `d=${compressed}`;
         
         let targetUrl = window.location.href;
 
-        // 4. Update Browser URL safely
+        // 2. Update Browser URL safely
         if (window.location.protocol === 'blob:') {
             window.location.hash = hashString;
             targetUrl = window.location.href;
@@ -268,14 +297,15 @@ const App: React.FC = () => {
             window.history.pushState(null, '', targetUrl);
         }
         
-        // 5. Copy using robust method
+        // 3. Copy using robust method
         await copyToClipboard(targetUrl);
         
         setShowShareToast(true);
       } catch (err) {
         console.error("Share failed", err);
+        // Minimal Fallback if compression fails (rare)
         try {
-            window.location.hash = `config=${encodeURIComponent(toBase64(JSON.stringify(receiptData)))}`;
+           window.location.hash = `config=${encodeURIComponent(btoa(JSON.stringify(receiptData)))}`;
         } catch(e) {}
         setShowShareToast(true); 
       }
