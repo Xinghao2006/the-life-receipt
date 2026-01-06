@@ -27,6 +27,8 @@ const App: React.FC = () => {
             setActiveTool('polaroid');
         } else if (hash.includes('tool=mixer')) {
             setActiveTool('mixer');
+        } else {
+            setActiveTool(null);
         }
     };
 
@@ -46,7 +48,14 @@ const App: React.FC = () => {
 
     if (isPlaying) {
         // Fade In
-        audio.play().catch(e => console.log("Audio play failed:", e));
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.warn("Background audio auto-play blocked", e);
+                setIsPlaying(false);
+            });
+        }
+        
         let volume = audio.volume; // Start from current volume
         if (audio.paused) audio.volume = 0; 
         
@@ -83,20 +92,15 @@ const App: React.FC = () => {
   };
 
   const handleOpenTool = (toolId: string) => {
-      // Clear hash if moving to a fresh tool to avoid state conflicts
-      if (!window.location.hash.includes('config=')) {
-          try {
-            window.history.replaceState(null, '', window.location.pathname);
-          } catch (e) {
-            console.warn('Navigation history update failed:', e);
-          }
-      }
+      // Safe navigation using hash only to prevent SecurityError in blob/iframe contexts
+      window.location.hash = `tool=${toolId}`;
       
       // Auto-pause background music when entering an immersive tool
       if (isPlaying) {
           setIsPlaying(false);
       }
       
+      // Manually set state for instant response
       if (toolId === 'receipt') setActiveTool('receipt');
       if (toolId === 'mixtape') setActiveTool('mixtape');
       if (toolId === 'polaroid') setActiveTool('polaroid');
@@ -104,23 +108,17 @@ const App: React.FC = () => {
   };
 
   const handleBackToBlog = () => {
-      try {
-          window.history.pushState(null, '', window.location.pathname);
-      } catch (e) {
-          console.warn('Navigation history update failed:', e);
-          try {
-            window.location.hash = '';
-          } catch(e2) {
-             console.warn('Hash update failed:', e2);
-          }
-      }
+      // Safe navigation: just clear the hash.
+      window.location.hash = '';
       setActiveTool(null);
   };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fafaf9]">
       {/* Persistent Audio Element */}
-      <audio ref={audioRef} loop src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" />
+      <audio ref={audioRef} loop crossOrigin="anonymous">
+          <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg" />
+      </audio>
 
       {/* Blog View (Base Layer) */}
       <div 
@@ -141,7 +139,13 @@ const App: React.FC = () => {
             activeTool === 'receipt' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#fafaf9]">
+        <div 
+            className="h-full w-full overflow-y-auto"
+            style={{
+                backgroundColor: '#e5e5e5',
+                backgroundImage: 'linear-gradient(to bottom, #e5e5e5, #ffffff)'
+            }}
+        >
             <ReceiptGenerator onBack={handleBackToBlog} />
         </div>
       </div>
@@ -152,7 +156,12 @@ const App: React.FC = () => {
             activeTool === 'mixtape' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#451a03]">
+        <div 
+            className="h-full w-full overflow-y-auto bg-[#1c1917]"
+            style={{
+                backgroundImage: 'radial-gradient(circle at center, #2e1065 0%, #0f172a 100%)'
+            }}
+        >
             <MoodMixtape onBack={handleBackToBlog} />
         </div>
       </div>
@@ -163,7 +172,13 @@ const App: React.FC = () => {
             activeTool === 'polaroid' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#292524]">
+        <div 
+            className="h-full w-full overflow-y-auto bg-[#1c1917]"
+            style={{
+                 backgroundImage: 'radial-gradient(#57534e 1px, #1c1917 1px)',
+                 backgroundSize: '24px 24px'
+            }}
+        >
             <PolaroidGenerator onBack={handleBackToBlog} />
         </div>
       </div>
@@ -174,7 +189,12 @@ const App: React.FC = () => {
             activeTool === 'mixer' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#0f172a]">
+        <div 
+            className="h-full w-full overflow-y-auto"
+            style={{
+                background: 'linear-gradient(to top, #0f172a, #334155)'
+            }}
+        >
             <AmbianceMixer onBack={handleBackToBlog} />
         </div>
       </div>

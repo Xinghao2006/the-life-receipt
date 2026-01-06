@@ -1,30 +1,79 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, CloudRain, Flame, Wind, Keyboard, Moon, Coffee, Volume2, Volume1, VolumeX } from 'lucide-react';
+import { ArrowLeft, CloudRain, Flame, Wind, Sun, Volume1, Waves } from 'lucide-react';
 
 interface AmbianceMixerProps {
   onBack: () => void;
 }
 
+type SoundType = 'white' | 'pink' | 'brown';
+
 interface SoundTrack {
   id: string;
   icon: React.ReactNode;
   label: string;
-  url: string;
-  color: string;
+  type: SoundType; 
+  filterFreq?: number; 
 }
 
 const SOUNDS: SoundTrack[] = [
-    { id: 'rain', label: 'Heavy Rain', icon: <CloudRain size={24} />, url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg', color: 'bg-blue-600' },
-    { id: 'fire', label: 'Campfire', icon: <Flame size={24} />, url: 'https://actions.google.com/sounds/v1/ambiences/fire.ogg', color: 'bg-orange-600' },
-    { id: 'wind', label: 'Windy', icon: <Wind size={24} />, url: 'https://actions.google.com/sounds/v1/weather/wind_medium.ogg', color: 'bg-slate-500' },
-    { id: 'coffee', label: 'Coffee Shop', icon: <Coffee size={24} />, url: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg', color: 'bg-amber-700' },
-    { id: 'night', label: 'Thunder', icon: <Moon size={24} />, url: 'https://actions.google.com/sounds/v1/weather/thunderstorm.ogg', color: 'bg-indigo-900' },
+    { id: 'focus', label: '深度专注', icon: <Sun size={24} />, type: 'white' },
+    { id: 'rain', label: '倾盆大雨', icon: <CloudRain size={24} />, type: 'pink' },
+    { id: 'fire', label: '篝火晚会', icon: <Flame size={24} />, type: 'brown', filterFreq: 500 },
+    { id: 'wind', label: '山谷微风', icon: <Wind size={24} />, type: 'pink', filterFreq: 400 },
+    { id: 'ocean', label: '海浪拍岸', icon: <Waves size={24} />, type: 'brown' },
 ];
 
 const AmbianceMixer: React.FC<AmbianceMixerProps> = ({ onBack }) => {
-  // State to track volume of each sound (0 = off, 1-100 = on)
   const [activeVolumes, setActiveVolumes] = useState<Record<string, number>>({});
-  const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const nodesRef = useRef<Record<string, { gain: GainNode, source?: AudioBufferSourceNode }>>({});
+
+  useEffect(() => {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      audioCtxRef.current = new AudioContextClass();
+
+      return () => {
+          if (audioCtxRef.current) {
+              audioCtxRef.current.close();
+          }
+      };
+  }, []);
+
+  const createNoiseBuffer = (ctx: AudioContext, type: SoundType): AudioBuffer => {
+      const bufferSize = ctx.sampleRate * 5; 
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = buffer.getChannelData(0);
+      
+      if (type === 'white') {
+          for (let i = 0; i < bufferSize; i++) {
+              output[i] = Math.random() * 2 - 1;
+          }
+      } else if (type === 'pink') {
+          let b0, b1, b2, b3, b4, b5, b6;
+          b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+          for (let i = 0; i < bufferSize; i++) {
+              const white = Math.random() * 2 - 1;
+              b0 = 0.99886 * b0 + white * 0.0555179;
+              b1 = 0.99332 * b1 + white * 0.0750759;
+              b2 = 0.96900 * b2 + white * 0.1538520;
+              b3 = 0.86650 * b3 + white * 0.3104856;
+              b4 = 0.55000 * b4 + white * 0.5329522;
+              b5 = -0.7616 * b5 - white * 0.0168980;
+              output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+              output[i] *= 0.11; 
+              b6 = white * 0.115926;
+          }
+      } else if (type === 'brown') {
+          let lastOut = 0.0;
+          for (let i = 0; i < bufferSize; i++) {
+              const white = Math.random() * 2 - 1;
+              output[i] = (lastOut + (0.02 * white)) / 1.02;
+              lastOut = output[i];
+              output[i] *= 3.5; 
+          }
+      }
+      return buffer;
+  };
 
   const toggleSound = (id: string) => {
       setActiveVolumes(prev => {
@@ -34,121 +83,120 @@ const AmbianceMixer: React.FC<AmbianceMixerProps> = ({ onBack }) => {
               delete next[id];
               return next;
           } else {
-              // Increase default volume for Thunder (night)
-              const defaultVol = id === 'night' ? 0.8 : 0.5;
-              return { ...prev, [id]: defaultVol };
+              return { ...prev, [id]: 0.5 };
           }
       });
   };
 
   const updateVolume = (id: string, vol: number) => {
-      setActiveVolumes(prev => ({
-          ...prev,
-          [id]: vol
-      }));
+      setActiveVolumes(prev => ({ ...prev, [id]: vol }));
   };
 
-  // Sync Audio Elements
   useEffect(() => {
-      SOUNDS.forEach(sound => {
-          let audio = audioRefs.current[sound.id];
-          if (!audio) {
-              audio = new Audio(sound.url);
-              audio.loop = true;
-              audioRefs.current[sound.id] = audio;
-          }
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
 
+      SOUNDS.forEach(sound => {
           const targetVol = activeVolumes[sound.id];
           
-          if (targetVol !== undefined) {
-              if (audio.paused) {
-                  audio.play().catch(e => console.log("Autoplay blocked", e));
+          if (!nodesRef.current[sound.id]) {
+              const gainNode = ctx.createGain();
+              gainNode.gain.value = 0;
+              if (sound.filterFreq) {
+                  const filter = ctx.createBiquadFilter();
+                  filter.type = 'lowpass';
+                  filter.frequency.value = sound.filterFreq;
+                  gainNode.connect(filter);
+                  filter.connect(ctx.destination);
+              } else {
+                  gainNode.connect(ctx.destination);
               }
-              audio.volume = targetVol;
+              nodesRef.current[sound.id] = { gain: gainNode };
+          }
+
+          const nodeData = nodesRef.current[sound.id];
+
+          if (targetVol !== undefined && targetVol > 0) {
+              if (!nodeData.source) {
+                  const src = ctx.createBufferSource();
+                  src.buffer = createNoiseBuffer(ctx, sound.type);
+                  src.loop = true;
+                  src.connect(nodeData.gain);
+                  src.start();
+                  nodeData.source = src;
+              }
+              nodeData.gain.gain.setTargetAtTime(targetVol, ctx.currentTime, 0.1);
           } else {
-              if (!audio.paused) {
-                  audio.pause();
+              nodeData.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+              if (nodeData.source && targetVol === undefined) {
+                  setTimeout(() => {
+                      if (nodesRef.current[sound.id]?.source) {
+                          nodesRef.current[sound.id].source?.stop();
+                          nodesRef.current[sound.id].source = undefined;
+                      }
+                  }, 200);
               }
-              audio.currentTime = 0;
           }
       });
-
-      return () => {
-          // Cleanup on unmount is handled by next effect or manually if needed
-          // But refs persist, so we should pause all on unmount
-      };
   }, [activeVolumes]);
 
-  useEffect(() => {
-      return () => {
-          Object.values(audioRefs.current).forEach((audio: HTMLAudioElement) => {
-              audio.pause();
-              audio.src = "";
-          });
-      };
-  }, []);
-
   return (
-    <div className="min-h-screen w-full bg-[#0f172a] text-white flex flex-col font-mono relative overflow-hidden">
+    <div 
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
+        style={{
+            background: "linear-gradient(to top, #0f172a, #334155)",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+        }}
+    >
         
-        {/* Pixel Grid Background */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none" 
-             style={{ 
-                 backgroundImage: `linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)`,
-                 backgroundSize: '20px 20px'
-             }}>
-        </div>
-
-        {/* Header */}
-        <div className="relative z-20 p-6 flex justify-between items-center bg-[#1e293b] border-b border-slate-700 shadow-lg">
-             <button 
-                onClick={onBack}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
-            >
-                <ArrowLeft size={16} /> Exit Mixer
-            </button>
-            <h1 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                <Volume2 size={16} /> 8-BIT AMBIANCE
-            </h1>
-        </div>
+        {/* Back Button */}
+        <button 
+            onClick={onBack}
+            className="absolute top-6 left-6 z-50 flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10"
+        >
+            <ArrowLeft size={16} />
+            <span className="text-sm font-medium">返回博客</span>
+        </button>
 
         {/* Mixer Board */}
-        <div className="flex-1 overflow-y-auto p-8 flex items-center justify-center">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl w-full">
+        <div className="flex-1 w-full overflow-y-auto p-8 flex items-center justify-center pt-24">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl w-full">
                 
                 {SOUNDS.map((sound) => {
                     const isActive = activeVolumes[sound.id] !== undefined;
-                    // Show correct default volume on slider even when inactive
-                    const volume = activeVolumes[sound.id] || (sound.id === 'night' ? 0.8 : 0.5);
+                    const volume = activeVolumes[sound.id] || 0.5;
 
                     return (
                         <div 
                             key={sound.id}
                             className={`
-                                relative p-6 rounded-xl border-2 transition-all duration-300 group
+                                relative p-4 rounded-xl border transition-all duration-300 group
                                 ${isActive 
-                                    ? 'bg-slate-800 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
-                                    : 'bg-slate-900 border-slate-700 hover:border-slate-500'}
+                                    ? 'bg-emerald-900/40 backdrop-blur-md border-emerald-500/50 shadow-lg' 
+                                    : 'bg-slate-800/40 backdrop-blur-sm border-white/5 hover:bg-slate-700/40'}
                             `}
                         >
                             {/* Header / Toggle */}
-                            <div className="flex justify-between items-start mb-6 cursor-pointer" onClick={() => toggleSound(sound.id)}>
-                                <div className={`p-3 rounded-lg transition-colors ${isActive ? sound.color : 'bg-slate-800 text-slate-500'}`}>
-                                    {sound.icon}
+                            <div className="flex justify-between items-center mb-4 cursor-pointer" onClick={() => toggleSound(sound.id)}>
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg transition-all duration-500 ${isActive ? 'bg-emerald-400 text-emerald-900' : 'bg-slate-700 text-slate-400'}`}>
+                                        {sound.icon}
+                                    </div>
+                                    <h3 className={`font-serif-title font-bold text-lg ${isActive ? 'text-emerald-100' : 'text-slate-300'}`}>{sound.label}</h3>
                                 </div>
-                                <div className={`w-3 h-3 rounded-full shadow-inner transition-colors ${isActive ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-slate-800'}`}></div>
-                            </div>
-
-                            <div className="mb-4">
-                                <h3 className={`font-bold text-lg ${isActive ? 'text-white' : 'text-slate-500'}`}>{sound.label}</h3>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-wider">{isActive ? 'ACTIVE' : 'MUTED'}</p>
+                                
+                                <div className={`
+                                    w-3 h-3 rounded-full border-2 transition-all duration-300
+                                    ${isActive ? 'bg-emerald-400 border-emerald-400' : 'bg-transparent border-slate-500'}
+                                `}></div>
                             </div>
 
                             {/* Volume Slider */}
-                            <div className={`transition-opacity duration-300 ${isActive ? 'opacity-100 pointer-events-auto' : 'opacity-20 pointer-events-none'}`}>
-                                <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
+                            <div className={`transition-all duration-500 ${isActive ? 'opacity-100 translate-y-0' : 'opacity-20 translate-y-2 pointer-events-none grayscale'}`}>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-2 font-bold uppercase tracking-wider">
                                     <Volume1 size={12} />
-                                    <span>VOL {Math.round(volume * 100)}%</span>
+                                    <span>音量 {Math.round(volume * 100)}%</span>
                                 </div>
                                 <input 
                                     type="range" 
@@ -157,15 +205,9 @@ const AmbianceMixer: React.FC<AmbianceMixerProps> = ({ onBack }) => {
                                     step="0.01" 
                                     value={volume}
                                     onChange={(e) => updateVolume(sound.id, parseFloat(e.target.value))}
-                                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-400"
+                                    className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400 hover:accent-emerald-300"
                                 />
                             </div>
-
-                            {/* Corner Accents */}
-                            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-current opacity-20 rounded-tl-lg"></div>
-                            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-current opacity-20 rounded-tr-lg"></div>
-                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-current opacity-20 rounded-bl-lg"></div>
-                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-current opacity-20 rounded-br-lg"></div>
                         </div>
                     );
                 })}

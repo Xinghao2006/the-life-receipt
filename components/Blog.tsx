@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Mic, Pause, Headphones, Tv, Video, Mail, CassetteTape, Volume2, Camera, ArrowLeft, ArrowRight, Gamepad2, Smartphone } from 'lucide-react';
+import { Sparkles, Mic, Pause, Headphones, Tv, Video, Mail, CassetteTape, Volume2, Camera, ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface BlogProps {
   onOpenTool: (id: string) => void;
@@ -48,12 +48,32 @@ const TOOLS = [
 ];
 
 const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
-  
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Circular Navigation Logic
+  const nextSlide = () => {
+      setActiveIndex((prev) => (prev + 1) % TOOLS.length);
+  };
+
+  const prevSlide = () => {
+      setActiveIndex((prev) => (prev - 1 + TOOLS.length) % TOOLS.length);
+  };
+
+  const getVisibleTools = () => {
+      const total = TOOLS.length;
+      // Get previous, current, and next indices wrapping around
+      const prevIndex = (activeIndex - 1 + total) % total;
+      const nextIndex = (activeIndex + 1) % total;
+      return { prev: TOOLS[prevIndex], current: TOOLS[activeIndex], next: TOOLS[nextIndex] };
+  };
+
+  const { prev, current, next } = getVisibleTools();
+
   return (
     <div className="min-h-screen bg-[#fafaf9] text-stone-800 font-sans selection:bg-stone-200 flex flex-col">
       
-      {/* Navigation - Fixed with Frosted Glass */}
-      <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#fafaf9]/70 backdrop-blur-md border-b border-stone-200/50">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-[#fafaf9]/70 backdrop-blur-md z-40 border-b border-stone-100/50 transition-all duration-300 supports-[backdrop-filter]:bg-[#fafaf9]/60">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="font-serif-title font-bold text-xl tracking-tight flex items-center gap-2">
             <div className="w-8 h-8 bg-stone-900 rounded-full flex items-center justify-center text-white shadow-sm">
@@ -62,8 +82,8 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
             <span>My Podcast.</span>
           </div>
           <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-stone-500">
-            <a href="#about" className="hover:text-stone-900 transition-colors">About</a>
-            <a href="#connect" className="hover:text-stone-900 transition-colors">Connect</a>
+            <a href="#" className="hover:text-stone-900 transition-colors">About</a>
+            <a href="#" className="hover:text-stone-900 transition-colors">Connect</a>
           </div>
         </div>
       </nav>
@@ -98,66 +118,94 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
             </div>
         </header>
 
-        {/* Horizontal Scroll Carousel Section */}
+        {/* Circular Carousel Section */}
         <div className="mb-20">
             <div className="flex justify-between items-end mb-8">
                 <h3 className="font-serif-title text-2xl font-bold text-stone-900">Interactive Tools</h3>
-                {/* Scroll hint */}
-                <span className="text-xs text-stone-400 uppercase tracking-widest hidden md:block">Scroll to explore →</span>
+                <div className="flex gap-2">
+                    <button onClick={prevSlide} className="p-2 rounded-full border border-stone-200 hover:bg-stone-100 transition-colors"><ArrowLeft size={20}/></button>
+                    <button onClick={nextSlide} className="p-2 rounded-full border border-stone-200 hover:bg-stone-100 transition-colors"><ArrowRight size={20}/></button>
+                </div>
             </div>
 
-            {/* Scroll Container */}
-            <div className="
-                flex overflow-x-auto gap-6 pb-8 -mx-6 px-6 
-                snap-x snap-mandatory 
-                scrollbar-hide
-            " style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {/* Carousel Container */}
+            <div className="relative h-[400px] w-full flex items-center justify-center perspective-1000">
                 
-                {TOOLS.map((tool) => (
-                    <div 
-                        key={tool.id}
-                        onClick={() => onOpenTool(tool.id)}
-                        className={`
-                            snap-center shrink-0 w-[85vw] sm:w-[320px] h-[380px] rounded-3xl cursor-pointer 
-                            bg-gradient-to-br ${tool.bgGradient} text-white p-8 flex flex-col justify-between group
-                            shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2
-                            relative overflow-hidden
-                        `}
-                    >
-                         {/* Background decoration */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+                {/* Previous Card (Left, faded) */}
+                <div 
+                    onClick={prevSlide}
+                    className="absolute left-0 md:left-10 w-[280px] h-[320px] rounded-3xl bg-gray-200 opacity-40 transform scale-90 -translate-x-10 cursor-pointer z-0 transition-all duration-500 hidden md:flex items-center justify-center grayscale blur-[1px] hover:opacity-60"
+                >
+                    <div className="text-center">
+                        <div className="font-bold text-gray-500">{prev.title}</div>
+                    </div>
+                </div>
 
-                        <div className="flex justify-between items-start z-10">
-                            <div className={`p-3 rounded-xl bg-white/10 backdrop-blur-md ${tool.accent}`}>
-                                {tool.icon}
-                            </div>
-                        </div>
+                {/* Active Card (Center) */}
+                <div 
+                    onClick={() => onOpenTool(current.id)}
+                    className={`
+                        relative w-[320px] md:w-[380px] h-[380px] rounded-3xl z-20 cursor-pointer 
+                        transform transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl shadow-xl
+                        bg-gradient-to-br ${current.bgGradient} text-white p-8 flex flex-col justify-between group
+                    `}
+                >
+                    {/* Background decoration */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
 
-                        <div className="z-10">
-                            <h2 className="font-serif-title text-3xl font-bold mb-2">{tool.title}</h2>
-                            <h3 className={`text-lg font-medium mb-4 ${tool.accent}`}>{tool.subtitle}</h3>
-                            <p className="text-white/60 text-sm leading-relaxed mb-6">
-                                {tool.desc}
-                            </p>
-                            
-                            <div className="flex items-center gap-2 text-sm font-bold opacity-80 group-hover:opacity-100 transition-opacity">
-                                <span>OPEN APP</span>
-                                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                            </div>
+                    <div className="flex justify-between items-start">
+                         <div className={`p-3 rounded-xl bg-white/10 backdrop-blur-md ${current.accent}`}>
+                             {current.icon}
+                         </div>
+                         <div className="text-xs font-mono opacity-50 uppercase tracking-widest border border-white/20 px-2 py-1 rounded">
+                             0{activeIndex + 1} / 0{TOOLS.length}
+                         </div>
+                    </div>
+
+                    <div>
+                        <h2 className="font-serif-title text-3xl font-bold mb-2">{current.title}</h2>
+                        <h3 className={`text-lg font-medium mb-4 ${current.accent}`}>{current.subtitle}</h3>
+                        <p className="text-white/60 text-sm leading-relaxed mb-6">
+                            {current.desc}
+                        </p>
+                        
+                        <div className="flex items-center gap-2 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-300">
+                            <span>OPEN APP</span>
+                            <ArrowRight size={14} />
                         </div>
                     </div>
-                ))}
+                </div>
 
+                {/* Next Card (Right, faded) */}
+                 <div 
+                    onClick={nextSlide}
+                    className="absolute right-0 md:right-10 w-[280px] h-[320px] rounded-3xl bg-gray-200 opacity-40 transform scale-90 translate-x-10 cursor-pointer z-0 transition-all duration-500 hidden md:flex items-center justify-center grayscale blur-[1px] hover:opacity-60"
+                >
+                    <div className="text-center">
+                        <div className="font-bold text-gray-500">{next.title}</div>
+                    </div>
+                </div>
+
+            </div>
+            
+            {/* Mobile Indicators */}
+            <div className="flex justify-center gap-2 mt-6 md:hidden">
+                {TOOLS.map((_, idx) => (
+                    <div 
+                        key={idx} 
+                        className={`w-2 h-2 rounded-full transition-colors ${idx === activeIndex ? 'bg-stone-800' : 'bg-stone-300'}`}
+                    />
+                ))}
             </div>
         </div>
 
         <div className="border-t border-stone-200 mb-16"></div>
 
         {/* Info & Connect Section */}
-        <section id="about" className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* About Card */}
             <div className="bg-[#f5f5f4] rounded-2xl p-8 flex flex-col">
-                <h4 className="font-serif-title text-lg font-bold mb-6">关于我</h4>
+                <h4 className="font-serif-title text-lg font-bold mb-6">关于主播</h4>
                 <div className="flex items-start gap-4 mb-4">
                     <div className="w-16 h-16 rounded-full bg-stone-300 overflow-hidden border-2 border-white shadow-sm shrink-0">
                         <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix" alt="Avatar" className="w-full h-full object-cover" />
@@ -178,11 +226,9 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
             </div>
 
             {/* Connect / Social Links */}
-            <div id="connect" className="border border-stone-200 rounded-2xl p-8 flex flex-col">
+            <div className="border border-stone-200 rounded-2xl p-8 flex flex-col">
                 <h4 className="font-serif-title text-lg font-bold mb-6">找到我 (Connect)</h4>
                 <div className="space-y-3 flex-grow">
-                    
-                    {/* Bilibili */}
                     <a 
                         href="https://space.bilibili.com/271852283?spm_id_from=333.788.0.0" 
                         target="_blank" 
@@ -197,37 +243,7 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
                             <p className="text-xs text-stone-400">观看视频</p>
                         </div>
                     </a>
-
-                    {/* Douyin */}
-                    <a 
-                        href="https://www.douyin.com/user/MS4wLjABAAAAGnSEWak2bYGKQaRoiT1fQj5a0BrBD3XT_oMQFrkD9Rs?from_tab_name=main" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-3 rounded-xl bg-white border border-stone-100 shadow-sm hover:shadow-md hover:border-pink-200 transition-all group"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-stone-50 text-stone-400 group-hover:bg-black group-hover:text-white flex items-center justify-center transition-colors duration-300">
-                            <Smartphone size={18} />
-                        </div>
-                        <div>
-                            <h5 className="font-bold text-stone-800 text-sm group-hover:text-black transition-colors">Douyin</h5>
-                            <p className="text-xs text-stone-400">关注日常</p>
-                        </div>
-                    </a>
-
-                    {/* Email */}
-                    <a 
-                        href="mailto:X18143003659@163.com"
-                        className="flex items-center gap-4 p-3 rounded-xl bg-white border border-stone-100 shadow-sm hover:shadow-md hover:border-pink-200 transition-all group"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-stone-50 text-stone-400 group-hover:bg-orange-500 group-hover:text-white flex items-center justify-center transition-colors duration-300">
-                            <Mail size={18} />
-                        </div>
-                        <div>
-                            <h5 className="font-bold text-stone-800 text-sm group-hover:text-orange-500 transition-colors">Email</h5>
-                            <p className="text-xs text-stone-400">合作联系</p>
-                        </div>
-                    </a>
-
+                    {/* ... other links can be added here ... */}
                 </div>
             </div>
         </section>
