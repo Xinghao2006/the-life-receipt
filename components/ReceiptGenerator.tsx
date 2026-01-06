@@ -151,19 +151,18 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ onBack }) => {
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
       style={{
-        background: "#e5e5e5", // Fallback
-        backgroundImage: "linear-gradient(to bottom, #e5e5e5, #ffffff)",
+        background: "linear-gradient(to bottom, #bfdbfe, #ffffff)", // blue-200 to white
       }}
     >
-      {/* Texture Overlay */}
-      <div className="absolute inset-0 opacity-40 pointer-events-none" 
-           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E")` }}>
+      {/* Texture Overlay - Subtle clouds/noise */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none" 
+           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E")` }}>
       </div>
 
       {/* Back Button */}
       <button 
         onClick={onBack}
-        className="absolute top-6 left-6 z-50 flex items-center gap-2 text-stone-500 hover:text-stone-900 transition-colors bg-white/50 px-4 py-2 rounded-full backdrop-blur-md shadow-sm border border-stone-200"
+        className="absolute top-6 left-6 z-50 flex items-center gap-2 text-blue-800 hover:text-blue-900 transition-colors bg-white/60 px-4 py-2 rounded-full backdrop-blur-md shadow-sm border border-blue-100"
       >
         <ArrowLeft size={16} />
         <span className="text-sm font-medium">返回博客</span>
@@ -171,7 +170,7 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ onBack }) => {
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md px-4 flex flex-col items-center transform scale-[0.85] sm:scale-100 origin-center transition-transform duration-300">
-        <div className="w-[340px] h-2 bg-black/10 rounded-full mb-[-2px] blur-[2px] relative z-20"></div>
+        <div className="w-[340px] h-2 bg-blue-900/10 rounded-full mb-[-2px] blur-[2px] relative z-20"></div>
         <div className="relative w-full perspective-1000">
              <ReceiptPaper 
                 data={receiptData} 
@@ -185,14 +184,14 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ onBack }) => {
       <div className="absolute bottom-8 right-6 flex flex-col gap-4 z-40">
         <button 
           onClick={() => setIsEditorOpen(true)}
-          className="w-12 h-12 bg-white text-stone-800 border border-stone-200 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 hover:bg-stone-50"
+          className="w-12 h-12 bg-white text-blue-900 border border-blue-100 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 hover:bg-blue-50"
           title="定制内容"
         >
           <Edit2 size={20} />
         </button>
         <button 
             onClick={handleSave}
-            className="w-12 h-12 bg-stone-900 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 hover:bg-stone-800"
+            className="w-12 h-12 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 hover:bg-blue-700"
             title="复制分享链接"
         >
           <Share2 size={20} />
@@ -200,7 +199,7 @@ const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({ onBack }) => {
       </div>
 
       {/* Toast */}
-      <div className={`fixed top-10 left-1/2 transform -translate-x-1/2 bg-stone-900/90 text-white px-6 py-2 rounded-full backdrop-blur transition-all duration-300 z-50 shadow-lg ${showShareToast ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+      <div className={`fixed top-10 left-1/2 transform -translate-x-1/2 bg-slate-800/90 text-white px-6 py-2 rounded-full backdrop-blur transition-all duration-300 z-50 shadow-lg ${showShareToast ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
         <p className="text-sm font-medium">链接已复制！快去分享吧。</p>
       </div>
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Blog from './components/Blog';
 import ReceiptGenerator from './components/ReceiptGenerator';
-import MoodMixtape from './components/MoodMixtape';
+import RetroSnake from './components/RetroSnake';
 import PolaroidGenerator from './components/PolaroidGenerator';
 import AmbianceMixer from './components/AmbianceMixer';
 
-type ActiveTool = 'receipt' | 'mixtape' | 'polaroid' | 'mixer' | null;
+type ActiveTool = 'receipt' | 'game' | 'polaroid' | 'mixer' | null;
 
 const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
@@ -21,8 +21,8 @@ const App: React.FC = () => {
         const hash = window.location.hash;
         if (hash.includes('config=')) {
             setActiveTool('receipt');
-        } else if (hash.includes('tool=mixtape')) {
-            setActiveTool('mixtape');
+        } else if (hash.includes('tool=game')) {
+            setActiveTool('game');
         } else if (hash.includes('tool=polaroid')) {
             setActiveTool('polaroid');
         } else if (hash.includes('tool=mixer')) {
@@ -105,7 +105,7 @@ const App: React.FC = () => {
       }
       
       if (toolId === 'receipt') setActiveTool('receipt');
-      if (toolId === 'mixtape') setActiveTool('mixtape');
+      if (toolId === 'game') setActiveTool('game');
       if (toolId === 'polaroid') setActiveTool('polaroid');
       if (toolId === 'mixer') setActiveTool('mixer');
   };
@@ -144,7 +144,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Tool Layer - Receipt (Paper Texture Background) */}
+      {/* Tool Layer - Receipt (Blue-White Gradient Background) */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'receipt' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -153,27 +153,21 @@ const App: React.FC = () => {
         <div 
             className="h-full w-full overflow-y-auto"
             style={{
-                backgroundColor: '#e5e5e5',
-                backgroundImage: 'linear-gradient(to bottom, #e5e5e5, #ffffff)'
+                background: 'linear-gradient(to bottom, #bfdbfe, #ffffff)'
             }}
         >
             <ReceiptGenerator onBack={handleBackToBlog} />
         </div>
       </div>
 
-       {/* Tool Layer - Mixtape (Cosmic Lo-Fi Background) */}
+       {/* Tool Layer - Retro Game (Dark Background) */}
        <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
-            activeTool === 'mixtape' ? 'translate-y-0' : 'translate-y-[110%]'
+            activeTool === 'game' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div 
-            className="h-full w-full overflow-y-auto bg-[#1c1917]"
-            style={{
-                backgroundImage: 'radial-gradient(circle at center, #2e1065 0%, #0f172a 100%)'
-            }}
-        >
-            <MoodMixtape onBack={handleBackToBlog} />
+        <div className="h-full w-full overflow-y-auto bg-[#2d3748]">
+            <RetroSnake onBack={handleBackToBlog} />
         </div>
       </div>
 

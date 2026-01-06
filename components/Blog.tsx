@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Mic, Pause, Headphones, Tv, Video, Mail, CassetteTape, Volume2, Camera, ArrowLeft, ArrowRight, Gamepad2, Smartphone } from 'lucide-react';
+import { Sparkles, Mic, Pause, Headphones, Tv, Mail, Volume2, Camera, ArrowLeft, ArrowRight, Gamepad2, Smartphone, Play } from 'lucide-react';
 
 interface BlogProps {
   onOpenTool: (id: string) => void;
@@ -15,17 +15,17 @@ const TOOLS = [
         subtitle: "人生收据",
         desc: "如果人生是一张超市小票，上面会打印什么？",
         icon: <Sparkles size={16} />,
-        bgGradient: "from-stone-800 to-stone-900",
-        accent: "text-indigo-400"
+        bgGradient: "from-blue-600 to-blue-800",
+        accent: "text-blue-300"
     },
     {
-        id: 'mixtape',
-        title: "Mood Mixtape",
-        subtitle: "情绪磁带",
-        desc: "将此刻的情绪刻录进 A/B 面。Lo-Fi 生活。",
-        icon: <CassetteTape size={16} />,
-        bgGradient: "from-[#451a03] to-[#78350f]",
-        accent: "text-amber-400"
+        id: 'game',
+        title: "Retro Snake",
+        subtitle: "复古贪吃蛇",
+        desc: "重回1998。在像素网格中寻找童年的快乐。",
+        icon: <Gamepad2 size={16} />,
+        bgGradient: "from-green-800 to-green-900",
+        accent: "text-green-400"
     },
     {
         id: 'polaroid',
