@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Blog from './components/Blog';
 import ReceiptGenerator from './components/ReceiptGenerator';
-import RetroSnake from './components/RetroSnake';
+import RetroGameCartridge from './components/RetroGameCartridge';
 import PolaroidGenerator from './components/PolaroidGenerator';
 import AmbianceMixer from './components/AmbianceMixer';
+import MoodMixtape from './components/MoodMixtape';
 
-type ActiveTool = 'receipt' | 'game' | 'polaroid' | 'mixer' | null;
+type ActiveTool = 'receipt' | 'game' | 'polaroid' | 'mixer' | 'mixtape' | null;
 
 const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
@@ -27,6 +28,8 @@ const App: React.FC = () => {
             setActiveTool('polaroid');
         } else if (hash.includes('tool=mixer')) {
             setActiveTool('mixer');
+        } else if (hash.includes('tool=mixtape')) {
+            setActiveTool('mixtape');
         }
     };
 
@@ -108,6 +111,7 @@ const App: React.FC = () => {
       if (toolId === 'game') setActiveTool('game');
       if (toolId === 'polaroid') setActiveTool('polaroid');
       if (toolId === 'mixer') setActiveTool('mixer');
+      if (toolId === 'mixtape') setActiveTool('mixtape');
   };
 
   const handleBackToBlog = () => {
@@ -126,7 +130,7 @@ const App: React.FC = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fafaf9]">
-      {/* Persistent Audio Element - Using a reliable generic file or allowing silence if fails */}
+      {/* Persistent Audio Element */}
       <audio ref={audioRef} loop crossOrigin="anonymous">
           <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg" />
       </audio>
@@ -134,7 +138,7 @@ const App: React.FC = () => {
       {/* Blog View (Base Layer) */}
       <div 
         className={`transition-all duration-700 ease-in-out transform ${
-            activeTool ? 'scale-95 opacity-50 blur-[2px]' : 'scale-100 opacity-100'
+            activeTool ? 'scale-95 opacity-50 blur-[2px] pointer-events-none' : 'scale-100 opacity-100'
         }`}
       >
         <Blog 
@@ -144,7 +148,9 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Tool Layer - Receipt (Blue-White Gradient Background) */}
+      {/* Tool Layers */}
+
+      {/* 1. Life Receipt */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'receipt' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -152,26 +158,24 @@ const App: React.FC = () => {
       >
         <div 
             className="h-full w-full overflow-y-auto"
-            style={{
-                background: 'linear-gradient(to bottom, #bfdbfe, #ffffff)'
-            }}
+            style={{ background: 'linear-gradient(to bottom, #bfdbfe, #ffffff)' }}
         >
             <ReceiptGenerator onBack={handleBackToBlog} />
         </div>
       </div>
 
-       {/* Tool Layer - Retro Game (Dark Background) */}
+       {/* 2. Retro Game (Focus Cartridge) - Replaced Snake with Cartridge as per Blog desc */}
        <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'game' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#2d3748]">
-            <RetroSnake onBack={handleBackToBlog} />
+        <div className="h-full w-full overflow-y-auto bg-[#0a0a0a]">
+            <RetroGameCartridge onBack={handleBackToBlog} />
         </div>
       </div>
 
-      {/* Tool Layer - Polaroid Generator (Darkroom Charcoal Background) */}
+      {/* 3. Polaroid Generator */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'polaroid' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -188,7 +192,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Tool Layer - Ambiance Mixer (Deep Ocean/Nature Background) */}
+      {/* 4. Ambiance Mixer */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'mixer' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -196,11 +200,22 @@ const App: React.FC = () => {
       >
         <div 
             className="h-full w-full overflow-y-auto"
-            style={{
-                background: 'linear-gradient(to top, #0f172a, #334155)'
-            }}
+            style={{ background: 'linear-gradient(to top, #0f172a, #334155)' }}
         >
             <AmbianceMixer onBack={handleBackToBlog} />
+        </div>
+      </div>
+
+      {/* 5. Mood Mixtape */}
+      <div 
+        className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
+            activeTool === 'mixtape' ? 'translate-y-0' : 'translate-y-[110%]'
+        }`}
+      >
+        <div 
+            className="h-full w-full overflow-y-auto bg-stone-900"
+        >
+            <MoodMixtape onBack={handleBackToBlog} />
         </div>
       </div>
 
