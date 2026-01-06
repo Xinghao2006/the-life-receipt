@@ -89,6 +89,11 @@ const App: React.FC = () => {
           }
       }
       
+      // Auto-pause background music when entering an immersive tool
+      if (isPlaying) {
+          setIsPlaying(false);
+      }
+      
       if (toolId === 'receipt') setActiveTool('receipt');
       if (toolId === 'mixtape') setActiveTool('mixtape');
       if (toolId === 'game') setActiveTool('game');
@@ -154,7 +159,7 @@ const App: React.FC = () => {
             activeTool === 'game' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#0f172a]">
+        <div className="h-full w-full overflow-y-auto bg-[#1a1b26]">
             <RetroGameCartridge onBack={handleBackToBlog} />
         </div>
       </div>
