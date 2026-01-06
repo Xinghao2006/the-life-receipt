@@ -182,7 +182,7 @@ const RetroGameCartridge: React.FC<RetroGameCartridgeProps> = ({ onBack }) => {
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
                                             <h2 className="text-lg font-black text-white leading-none uppercase tracking-tighter mb-1">{name}</h2>
-                                            <div className="text-[8px] text-[#9ece6a] font-mono">> STATUS: ONLINE</div>
+                                            <div className="text-[8px] text-[#9ece6a] font-mono">&gt; STATUS: ONLINE</div>
                                         </div>
                                         
                                         {/* Stat Bars Visualization */}
