@@ -1,0 +1,186 @@
+import React from 'react';
+import { ReceiptData, ReceiptItem } from '../types';
+import { Plus, Trash2, X, Save, Image as ImageIcon } from 'lucide-react';
+
+interface EditorProps {
+  data: ReceiptData;
+  onChange: (data: ReceiptData) => void;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
+  
+  const updateField = (field: keyof ReceiptData, value: string) => {
+    // Cast to any to allow updating string fields dynamically without strict TS complaints about array types
+    onChange({ ...data, [field]: value } as any);
+  };
+
+  const updateItem = (index: number, field: keyof ReceiptItem, value: string | number) => {
+    const newItems = [...data.items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    onChange({ ...data, items: newItems });
+  };
+
+  const addItem = () => {
+    onChange({
+      ...data,
+      items: [...data.items, { name: "新项目", qty: 1, price: "无价" }]
+    });
+  };
+
+  const removeItem = (index: number) => {
+    const newItems = data.items.filter((_, i) => i !== index);
+    onChange({ ...data, items: newItems });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-gray-900/95 backdrop-blur-sm flex flex-col animate-fade-in overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700 shrink-0">
+        <h2 className="text-white font-bold text-lg">定制您的收据</h2>
+        <button onClick={onClose} className="p-2 text-gray-400 hover:text-white">
+          <X size={24} />
+        </button>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
+        
+        {/* Basic Info Section */}
+        <section className="space-y-4">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">基础信息</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">店铺/收银员</label>
+              <input 
+                type="text" 
+                value={data.cashier || ''} 
+                onChange={(e) => updateField('cashier', e.target.value)}
+                className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700 focus:border-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">日期范围</label>
+              <input 
+                type="text" 
+                value={data.dateRange || ''} 
+                onChange={(e) => updateField('dateRange', e.target.value)}
+                className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700 focus:border-blue-500 outline-none"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Items Section */}
+        <section className="space-y-3">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">清单项目 ({data.items ? data.items.length : 0})</h3>
+            <button onClick={addItem} className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded">
+              <Plus size={14} /> 添加
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            {(data.items || []).map((item, idx) => (
+              <div key={idx} className="flex gap-2 items-start bg-gray-800 p-2 rounded border border-gray-700">
+                <input 
+                  type="number" 
+                  value={item.qty} 
+                  onChange={(e) => updateItem(idx, 'qty', parseInt(e.target.value) || 0)}
+                  className="w-10 bg-gray-900 text-center text-white rounded p-1 text-sm border border-gray-600"
+                />
+                <div className="flex-1 space-y-1">
+                  <input 
+                    type="text" 
+                    value={item.name || ''} 
+                    onChange={(e) => updateItem(idx, 'name', e.target.value)}
+                    className="w-full bg-transparent text-white border-b border-gray-600 focus:border-blue-500 outline-none text-sm pb-1"
+                    placeholder="项目名称"
+                  />
+                  <input 
+                    type="text" 
+                    value={item.price || ''} 
+                    onChange={(e) => updateItem(idx, 'price', e.target.value)}
+                    className="w-full bg-transparent text-gray-400 text-xs outline-none"
+                    placeholder="价格/代价"
+                  />
+                </div>
+                <button onClick={() => removeItem(idx)} className="p-2 text-red-400 hover:text-red-300">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Hidden Content Section */}
+        <section className="space-y-4 pt-4 border-t border-gray-700">
+          <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+            <ImageIcon size={16} /> 彩蛋配置 (扫描条码后显示)
+          </h3>
+          
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">图片链接 (URL)</label>
+            <input 
+              type="text" 
+              value={data.hiddenImage || ''} 
+              onChange={(e) => updateField('hiddenImage', e.target.value)}
+              placeholder="https://..."
+              className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700 focus:border-purple-500 outline-none"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">推荐使用图床链接，或者是 Unsplash 的图片地址。</p>
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">彩蛋故事文案</label>
+            <textarea 
+              value={data.hiddenStory || ''} 
+              onChange={(e) => updateField('hiddenStory', e.target.value)}
+              rows={3}
+              placeholder="写一段感人的话..."
+              className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700 focus:border-purple-500 outline-none font-handwriting text-lg"
+            />
+          </div>
+        </section>
+        
+        {/* Footer Totals */}
+        <section className="space-y-4">
+           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">底部总结</h3>
+           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">总计标签</label>
+              <input type="text" value={data.totalLabel || ''} onChange={(e) => updateField('totalLabel', e.target.value)} className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700" />
+            </div>
+             <div>
+              <label className="block text-xs text-gray-500 mb-1">总计值</label>
+              <input type="text" value={data.totalValue || ''} onChange={(e) => updateField('totalValue', e.target.value)} className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">税费标签</label>
+              <input type="text" value={data.taxLabel || ''} onChange={(e) => updateField('taxLabel', e.target.value)} className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700" />
+            </div>
+             <div>
+              <label className="block text-xs text-gray-500 mb-1">税费值</label>
+              <input type="text" value={data.taxValue || ''} onChange={(e) => updateField('taxValue', e.target.value)} className="w-full bg-gray-800 text-white rounded p-2 text-sm border border-gray-700" />
+            </div>
+           </div>
+        </section>
+
+      </div>
+
+      {/* Footer Actions */}
+      <div className="p-4 bg-gray-800 border-t border-gray-700 shrink-0 safe-area-bottom">
+        <button 
+          onClick={onSave}
+          className="w-full bg-white text-black font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+        >
+          <Save size={20} />
+          生成并分享网页
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default Editor;

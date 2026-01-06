@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>The Life Receipt</title>
+    <!-- Use fonts.loli.net (Domestic mirror for Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.loli.net">
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    <link href="https://fonts.loli.net/css2?family=Caveat:wght@400;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      @import "tailwindcss/base";
+      @import "tailwindcss/components";
+      @import "tailwindcss/utilities";
+
+      /* Custom utility for the receipt font */
+      .font-receipt {
+        font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+      }
+      /* Restore aesthetic handwriting font with system fallbacks. 
+         Added 'Caveat' for readable English handwriting. 
+         'Ma Shan Zheng' remains for Chinese. */
+      .font-handwriting {
+        font-family: 'Caveat', 'Ma Shan Zheng', 'KaiTi', 'STKaiti', '楷体', cursive;
+      }
+      /* Hide scrollbar completely and prevent scrolling */
+      body {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        overflow: hidden; /* Prevent scrolling */
+        /* Set background to the blue-white gradient */
+        background: linear-gradient(to bottom right, #00416A, #E4E5E6);
+        background-attachment: fixed;
+        height: 100vh;
+        width: 100vw;
+      }
+      body::-webkit-scrollbar {
+        display: none;
+      }
+      @keyframes print-receipt {
+        0% { transform: translateY(-100%); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+      .animate-print {
+        animation: print-receipt 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      @keyframes fade-in {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "jsbarcode": "https://esm.sh/jsbarcode@^3.12.1"
+  }
+}
+</script>
+</head>
+  <body class="text-white">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
