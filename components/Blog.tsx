@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ArrowRight, Sparkles, Mic, Play, Pause, Headphones, Tv, Video, Mail, CassetteTape, Clapperboard, Film } from 'lucide-react';
+import { ArrowRight, Sparkles, Mic, Play, Pause, Headphones, Tv, Video, Mail, CassetteTape, Gamepad2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BlogProps {
   onOpenTool: (id: string) => void;
@@ -44,27 +44,34 @@ const TOOLS = [
         disabled: false
     },
     {
-        id: 'cinema',
-        title: "Time Cinema",
-        subtitle: "时光电影院",
-        desc: "Coming Soon. 凭票入场。重映那些从未褪色的记忆片段，仅限今夜放映。",
-        icon: <Clapperboard size={10} />,
-        arrowIcon: <Film size={18} />,
+        id: 'game',
+        title: "Retro Cartridge",
+        subtitle: "复古游戏卡带",
+        desc: "如果你的人生是一款红白机游戏，封面会是什么样？生成你的专属卡带。",
+        icon: <Gamepad2 size={10} />,
+        arrowIcon: <ArrowRight size={18} />,
         theme: {
-            bg: "bg-[#881337]", // Rose 900
-            accent: "bg-rose-500",
-            textAccent: "text-rose-300",
-            hoverText: "group-hover:to-rose-200",
-            decoration: "decoration-rose-500/50",
-            orb1: "from-rose-500 via-red-500 to-pink-500",
-            orb2: "bg-red-800"
+            bg: "bg-[#0f172a]", // Slate 900
+            accent: "bg-emerald-500",
+            textAccent: "text-emerald-300",
+            hoverText: "group-hover:to-emerald-200",
+            decoration: "decoration-emerald-500/50",
+            orb1: "from-emerald-500 via-teal-500 to-cyan-500",
+            orb2: "bg-teal-800"
         },
-        disabled: true
+        disabled: false
     }
 ];
 
 const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (direction: 'left' | 'right') => {
+      if (scrollContainerRef.current) {
+          const scrollAmount = direction === 'left' ? -320 : 320;
+          scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+  };
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-stone-800 font-sans selection:bg-stone-200 flex flex-col">
@@ -117,17 +124,33 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
 
         {/* Carousel Section */}
         <div className="mb-20">
-            <div className="flex justify-between items-end mb-6">
+            <div className="flex justify-between items-center mb-2">
                 <h3 className="font-serif-title text-2xl font-bold text-stone-900">Interactive Tools</h3>
-                <div className="flex gap-2">
-                    {/* Visual indicators for scrolling if needed, but native scrollbar is hidden */}
+                
+                {/* Desktop Navigation Controls */}
+                <div className="hidden md:flex gap-2">
+                    <button 
+                        onClick={() => scroll('left')}
+                        className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-stone-100 hover:border-stone-300 transition-colors active:scale-95 text-stone-600"
+                        aria-label="Scroll Left"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <button 
+                        onClick={() => scroll('right')}
+                        className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-stone-100 hover:border-stone-300 transition-colors active:scale-95 text-stone-600"
+                        aria-label="Scroll Right"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
                 </div>
             </div>
 
             {/* Scroll Container */}
+            {/* Added py-12 to fix top clipping on hover */}
             <div 
                 ref={scrollContainerRef}
-                className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar -mx-6 px-6"
+                className="flex gap-6 overflow-x-auto py-12 snap-x snap-mandatory hide-scrollbar px-1"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {TOOLS.map((tool) => (
@@ -137,7 +160,7 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
                         className={`
                             relative flex-shrink-0 w-[85vw] md:w-[400px] snap-center
                             group overflow-hidden rounded-3xl p-8 text-white transition-all duration-500 
-                            ${tool.disabled ? 'cursor-not-allowed opacity-80 grayscale-[0.3]' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-2'}
+                            ${tool.disabled ? 'cursor-not-allowed opacity-80 grayscale-[0.3]' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-4'}
                             ${tool.theme.bg}
                         `}
                     >

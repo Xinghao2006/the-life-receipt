@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Blog from './components/Blog';
 import ReceiptGenerator from './components/ReceiptGenerator';
 import MoodMixtape from './components/MoodMixtape';
+import RetroGameCartridge from './components/RetroGameCartridge';
 
-type ActiveTool = 'receipt' | 'mixtape' | null;
+type ActiveTool = 'receipt' | 'mixtape' | 'game' | null;
 
 const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
@@ -21,6 +22,8 @@ const App: React.FC = () => {
             setActiveTool('receipt');
         } else if (hash.includes('tool=mixtape')) {
             setActiveTool('mixtape');
+        } else if (hash.includes('tool=game')) {
+            setActiveTool('game');
         }
     };
 
@@ -88,6 +91,7 @@ const App: React.FC = () => {
       
       if (toolId === 'receipt') setActiveTool('receipt');
       if (toolId === 'mixtape') setActiveTool('mixtape');
+      if (toolId === 'game') setActiveTool('game');
   };
 
   const handleBackToBlog = () => {
@@ -141,6 +145,17 @@ const App: React.FC = () => {
       >
         <div className="h-full w-full overflow-y-auto bg-[#451a03]">
             <MoodMixtape onBack={handleBackToBlog} />
+        </div>
+      </div>
+
+      {/* Tool Layer - Game */}
+      <div 
+        className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
+            activeTool === 'game' ? 'translate-y-0' : 'translate-y-[110%]'
+        }`}
+      >
+        <div className="h-full w-full overflow-y-auto bg-[#0f172a]">
+            <RetroGameCartridge onBack={handleBackToBlog} />
         </div>
       </div>
 
