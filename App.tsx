@@ -3,7 +3,7 @@ import ReceiptPaper from './components/ReceiptPaper';
 import Polaroid from './components/Polaroid';
 import Editor from './components/Editor';
 import { generatePolaroidStory } from './services/geminiService';
-import { ReceiptData, PolaroidData } from './types';
+import { ReceiptData, PolaroidData, HiddenContentItem } from './types';
 import { Edit2, Share2, Printer, ExternalLink } from 'lucide-react';
 
 const DEFAULT_RECEIPT: ReceiptData = {
@@ -21,8 +21,11 @@ const DEFAULT_RECEIPT: ReceiptData = {
   totalValue: "正在编译...",
   taxLabel: "额外支出",
   taxValue: "颈椎康复费",
-  hiddenStory: "只有在编译通过的那一刻，世界才是美好的。",
-  hiddenImage: "https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=600"
+  // Default new hidden content structure
+  hiddenContent: [
+    { id: 'def1', type: 'image', content: "https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=600" },
+    { id: 'def2', type: 'text', content: "只有在编译通过的那一刻，世界才是美好的。" }
+  ]
 };
 
 // Helper for Unicode-safe Base64 Encoding
@@ -56,16 +59,9 @@ const App: React.FC = () => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
-  const [isWeChat, setIsWeChat] = useState(false);
 
   // Load from URL Hash (Priority) or Search (Legacy) on mount
   useEffect(() => {
-    // 1. Detect WeChat environment
-    const ua = navigator.userAgent.toLowerCase();
-    if (ua.match(/MicroMessenger/i)) {
-      setIsWeChat(true);
-    }
-
     // 2. Load State
     const handleStateLoad = () => {
       try {
@@ -88,7 +84,21 @@ const App: React.FC = () => {
         }
         
         if (configStr) {
-            const decoded = JSON.parse(fromBase64(configStr));
+            const decoded: ReceiptData = JSON.parse(fromBase64(configStr));
+            
+            // --- Migration Logic for Old Data Format ---
+            // Convert old hiddenStory/hiddenImage to hiddenContent array if missing
+            if (!decoded.hiddenContent && (decoded.hiddenStory || decoded.hiddenImage)) {
+                decoded.hiddenContent = [];
+                if (decoded.hiddenImage) {
+                    decoded.hiddenContent.push({ id: 'mig-img', type: 'image', content: decoded.hiddenImage });
+                }
+                if (decoded.hiddenStory) {
+                    decoded.hiddenContent.push({ id: 'mig-txt', type: 'text', content: decoded.hiddenStory });
+                }
+            }
+            // -------------------------------------------
+
             setReceiptData(decoded);
             setIsPrinting(true);
             setTimeout(() => setIsPrinting(false), 1600);
@@ -118,28 +128,63 @@ const App: React.FC = () => {
   }, []);
 
   const handleBarcodeClick = async () => {
-    // If user customized hidden story, use it
-    if (receiptData.hiddenStory && receiptData.hiddenImage) {
-        const rotation = (Math.random() * 6) - 3;
+    // If user customized hidden content, use it
+    if (receiptData.hiddenContent && receiptData.hiddenContent.length > 0) {
         setPolaroidData({
-            imageUrl: receiptData.hiddenImage,
-            date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.'),
-            story: receiptData.hiddenStory,
-            rotation
+            items: receiptData.hiddenContent,
+            date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
         });
         return;
     }
 
-    // Fallback to auto-generation
+    // Fallback/Legacy Check: If user had old format but migration failed for some reason
+    if (receiptData.hiddenStory || receiptData.hiddenImage) {
+         const legacyItems: HiddenContentItem[] = [];
+         if(receiptData.hiddenImage) legacyItems.push({ id: 'leg-img', type: 'image', content: receiptData.hiddenImage });
+         if(receiptData.hiddenStory) legacyItems.push({ id: 'leg-txt', type: 'text', content: receiptData.hiddenStory });
+         
+         setPolaroidData({
+            items: legacyItems,
+            date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
+        });
+        return;
+    }
+
+    // Fallback to auto-generation if totally empty
     const randomItem = receiptData.items[Math.floor(Math.random() * receiptData.items.length)];
-    const story = await generatePolaroidStory(randomItem.name);
-    const rotation = (Math.random() * 6) - 3; 
+    const generatedItems = await generatePolaroidStory(randomItem.name);
+    
     setPolaroidData({
-      imageUrl: DEFAULT_RECEIPT.hiddenImage || "",
-      date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.'),
-      story: story,
-      rotation
+      items: generatedItems,
+      date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
     });
+  };
+
+  // Robust Copy function that works in HTTP (Insecure Context)
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for HTTP / Insecure contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback: Oops, unable to copy', err);
+        }
+        document.body.removeChild(textArea);
+      }
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
   };
 
   const handleSave = async () => {
@@ -152,18 +197,22 @@ const App: React.FC = () => {
         const urlSafeEncoded = encodeURIComponent(encoded);
         const hashString = `config=${urlSafeEncoded}`;
         
+        let targetUrl = window.location.href;
+
         // 4. Update Browser URL safely
         if (window.location.protocol === 'blob:') {
             window.location.hash = hashString;
-            await navigator.clipboard.writeText(window.location.href);
+            targetUrl = window.location.href;
         } else {
             const url = new URL(window.location.href);
             url.search = ""; 
             url.hash = hashString;
-            const cleanUrl = url.toString();
-            window.history.pushState(null, '', cleanUrl);
-            await navigator.clipboard.writeText(cleanUrl);
+            targetUrl = url.toString();
+            window.history.pushState(null, '', targetUrl);
         }
+        
+        // 5. Copy using robust method
+        await copyToClipboard(targetUrl);
         
         setShowShareToast(true);
       } catch (err) {
@@ -239,50 +288,12 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Polaroid Modal */}
+      {/* Polaroid/Memory Strip Modal */}
       {polaroidData && (
         <Polaroid 
             data={polaroidData} 
             onClose={() => setPolaroidData(null)} 
         />
-      )}
-
-      {/* WeChat Guide Overlay */}
-      {isWeChat && (
-        <div 
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center pt-8 px-8 text-white animate-fade-in"
-            onClick={() => setIsWeChat(false)}
-        >
-            <div className="w-full flex justify-end mb-4">
-               {/* Curved Arrow pointing to top right */}
-               <svg width="80" height="80" viewBox="0 0 100 100" className="text-white transform rotate-12 animate-bounce">
-                  <path d="M10,50 Q40,10 80,10" fill="none" stroke="currentColor" strokeWidth="3" markerEnd="url(#arrowhead)" />
-                  <defs>
-                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                      <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" />
-                    </marker>
-                  </defs>
-               </svg>
-            </div>
-            
-            <h2 className="text-2xl font-bold mb-4 font-handwriting">糟糕，被拦截了...</h2>
-            <div className="space-y-4 text-center max-w-xs">
-                <p className="text-gray-300 leading-relaxed">
-                   微信可能不支持直接访问或保存图片。
-                </p>
-                <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
-                    <p className="font-bold text-lg text-yellow-400 mb-2">💡 正确打开方式：</p>
-                    <ol className="text-left text-sm space-y-2 list-decimal list-inside text-gray-300">
-                        <li>点击右上角的 <span className="font-bold text-white">···</span></li>
-                        <li>选择 <span className="font-bold text-white">在浏览器打开</span></li>
-                        <li>(Safari 或 Chrome)</li>
-                    </ol>
-                </div>
-            </div>
-            <button className="mt-12 text-gray-500 text-sm underline">
-                我已知晓，继续尝试访问
-            </button>
-        </div>
       )}
     </div>
   );

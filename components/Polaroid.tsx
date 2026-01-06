@@ -7,58 +7,73 @@ interface PolaroidProps {
 }
 
 const Polaroid: React.FC<PolaroidProps> = ({ data, onClose }) => {
-  const [imgError, setImgError] = useState(false);
-
   if (!data) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 transition-all animate-fade-in"
       onClick={onClose}
     >
       <div 
-        className="bg-white p-4 pb-12 shadow-2xl transform transition-transform duration-500 hover:scale-105 max-w-[320px] w-full"
+        className="bg-[#fdfdfd] shadow-2xl max-w-[340px] w-full max-h-[85vh] overflow-y-auto flex flex-col relative rounded-sm"
         style={{ 
-            transform: `rotate(${data.rotation}deg)`,
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3)'
         }}
         onClick={(e) => e.stopPropagation()} 
       >
-        <div className="aspect-square bg-gray-200 mb-4 overflow-hidden relative group">
-            {!imgError ? (
-                <img 
-                    src={data.imageUrl} 
-                    alt="Memory" 
-                    className="w-full h-full object-cover filter contrast-110 saturation-75"
-                    loading="eager"
-                    onError={() => setImgError(true)}
-                />
-            ) : (
-                // Fallback gradient if image fails to load
-                <div className="w-full h-full bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 flex items-center justify-center">
-                   <span className="text-gray-400 font-mono text-xs">MEMORY_NOT_FOUND</span>
-                </div>
-            )}
-            
-            {/* Texture overlay for old photo look */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/10 to-transparent pointer-events-none mix-blend-overlay"></div>
-            {/* Scratches/Noise */}
-            <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(rgba(0,0,0,0.1) 1px, transparent 1px)', backgroundSize: '4px 4px' }}></div>
-        </div>
-        
-        <div className="text-center font-handwriting text-ink">
-          <p className="text-2xl leading-relaxed transform -rotate-1 text-gray-800">
-            {data.story}
-          </p>
-          <p className="text-xs text-gray-400 mt-4 font-mono uppercase tracking-widest">{data.date}</p>
+        {/* Paper Texture Overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-50 z-20 mix-blend-multiply" 
+             style={{ 
+               backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E")` 
+             }}>
         </div>
 
-        <button 
-            onClick={onClose}
-            className="absolute -top-3 -right-3 bg-white text-black rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold border border-gray-200"
-        >
-            ✕
-        </button>
+        {/* Date Stamp Header */}
+        <div className="sticky top-0 bg-[#fdfdfd]/95 backdrop-blur z-10 p-4 border-b border-gray-100 flex justify-between items-center">
+            <span className="font-mono text-xs text-gray-400 tracking-widest uppercase">{data.date}</span>
+            <button 
+                onClick={onClose}
+                className="text-gray-400 hover:text-black transition-colors"
+            >
+                ✕
+            </button>
+        </div>
+
+        {/* Content Stream */}
+        <div className="p-4 space-y-6 pb-12">
+            {data.items.map((item) => (
+                <div key={item.id} className="animate-fade-in">
+                    {item.type === 'image' ? (
+                         <div className="p-2 bg-white border border-gray-100 shadow-sm transform rotate-[0.5deg]">
+                            <div className="aspect-square bg-gray-100 overflow-hidden relative">
+                                <img 
+                                    src={item.content} 
+                                    alt="Memory" 
+                                    className="w-full h-full object-cover filter sepia-[0.2] contrast-105"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=No+Image';
+                                    }}
+                                />
+                                <div className="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.1)] pointer-events-none"></div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="px-2">
+                             <p className="font-handwriting text-xl leading-relaxed text-gray-800 whitespace-pre-wrap">
+                                {item.content}
+                             </p>
+                        </div>
+                    )}
+                </div>
+            ))}
+            
+            {/* End Mark */}
+            <div className="flex justify-center pt-4 opacity-50">
+                <div className="w-2 h-2 rounded-full bg-gray-300 mx-1"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-300 mx-1"></div>
+                <div className="w-2 h-2 rounded-full bg-gray-300 mx-1"></div>
+            </div>
+        </div>
       </div>
     </div>
   );

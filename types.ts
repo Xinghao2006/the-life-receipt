@@ -4,6 +4,12 @@ export interface ReceiptItem {
   price: string;
 }
 
+export interface HiddenContentItem {
+  id: string;
+  type: 'image' | 'text';
+  content: string;
+}
+
 export interface ReceiptData {
   dateRange: string;
   cashier: string;
@@ -12,14 +18,14 @@ export interface ReceiptData {
   totalValue: string;
   taxLabel: string;
   taxValue: string;
-  // Configuration for the hidden polaroid
+  // New structure for multiple items
+  hiddenContent?: HiddenContentItem[];
+  // Deprecated fields kept for backward compatibility during migration
   hiddenStory?: string;
   hiddenImage?: string;
 }
 
 export interface PolaroidData {
-  imageUrl: string;
+  items: HiddenContentItem[];
   date: string;
-  story: string;
-  rotation: number;
 }

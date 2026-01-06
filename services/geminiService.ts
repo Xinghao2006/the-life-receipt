@@ -1,4 +1,4 @@
-import { ReceiptData } from "../types";
+import { ReceiptData, HiddenContentItem } from "../types";
 
 // Mock Data Pools for Chinese CS Student
 const CASHIERS = ["教务处", "辅导员", "面试官", "宿管阿姨", "Debug大神", "GitHub", "StackOverflow"];
@@ -90,25 +90,33 @@ export const generateReceipt = async (userPrompt: string): Promise<ReceiptData> 
   };
 };
 
-export const generatePolaroidStory = async (receiptItem: string): Promise<string> => {
+export const generatePolaroidStory = async (receiptItem: string): Promise<HiddenContentItem[]> => {
   await delay(600);
   
+  let storyText = getRandom(STORIES);
+
   // Pure CS Context matching
   if (receiptItem.includes("Bug") || receiptItem.includes("代码") || receiptItem.includes("Java") || receiptItem.includes("C语言")) {
-    return "只有在编译通过的那一刻，世界才是美好的。";
+    storyText = "只有在编译通过的那一刻，世界才是美好的。";
   }
-  if (receiptItem.includes("对象") || receiptItem.includes("404")) {
-    return "对象(Object)可以New一个，但生活不行。";
+  else if (receiptItem.includes("对象") || receiptItem.includes("404")) {
+    storyText = "对象(Object)可以New一个，但生活不行。";
   }
-  if (receiptItem.includes("食堂") || receiptItem.includes("饭") || receiptItem.includes("美式")) {
-    return "咖啡是把代码转换成屎山的燃料。";
+  else if (receiptItem.includes("食堂") || receiptItem.includes("饭") || receiptItem.includes("美式")) {
+    storyText = "咖啡是把代码转换成屎山的燃料。";
   }
-  if (receiptItem.includes("高数") || receiptItem.includes("挂科") || receiptItem.includes("学")) {
-    return "只要专业选得好，年年期末胜高考。";
+  else if (receiptItem.includes("高数") || receiptItem.includes("挂科") || receiptItem.includes("学")) {
+    storyText = "只要专业选得好，年年期末胜高考。";
   }
-  if (receiptItem.includes("头发") || receiptItem.includes("修仙")) {
-    return "我的发际线，是我变强的见证。";
+  else if (receiptItem.includes("头发") || receiptItem.includes("修仙")) {
+    storyText = "我的发际线，是我变强的见证。";
   }
 
-  return getRandom(STORIES);
+  // Default fallback image
+  const defaultImage = "https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=600";
+
+  return [
+    { id: '1', type: 'image', content: defaultImage },
+    { id: '2', type: 'text', content: storyText }
+  ];
 };
