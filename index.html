@@ -7,33 +7,14 @@
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     
     <!-- SEO & Social Media Tags -->
-    <title>The Life Receipt | 人生收据生成器</title>
-    <meta name="description" content="一款极简美学的记录工具。将你的年度经历、得失与回忆打印成一张超市收据。发现藏在条形码里的彩蛋故事。">
-    <meta name="keywords" content="人生收据, Life Receipt, 年度总结, 创意生成器, 治愈, 极简主义">
+    <title>My Podcast | 记录生活</title>
+    <meta name="description" content="A minimalist digital garden and playground.">
     
-    <!-- Schema.org Microdata for Google+ / QQ / WeChat (itemprop) -->
-    <meta itemprop="name" content="人生收据生成器 (The Life Receipt)">
-    <meta itemprop="description" content="别让记忆随风而去。在这里，把你的一年（或一生）打印成一张具有复古美感的超市收据。点击生成属于你的时光凭证。">
-    <meta itemprop="image" content="https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop">
-
-    <!-- Open Graph / Facebook / WeChat / LinkedIn -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="人生收据生成器 (The Life Receipt)">
-    <meta property="og:description" content="别让记忆随风而去。在这里，把你的一年（或一生）打印成一张具有复古美感的超市收据。点击生成属于你的时光凭证。">
-    <meta property="og:image" content="https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=800">
-    <meta property="og:site_name" content="The Life Receipt">
-    <meta property="og:url" content="https://life-receipt.vercel.app/"> 
-    
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="人生收据生成器 (The Life Receipt)">
-    <meta name="twitter:description" content="别让记忆随风而去。在这里，把你的一年（或一生）打印成一张具有复古美感的超市收据。">
-    <meta name="twitter:image" content="https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=800">
-
     <!-- Use fonts.loli.net (Domestic mirror for Google Fonts) -->
     <link rel="preconnect" href="https://fonts.loli.net">
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Caveat:wght@400;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Added Noto Serif SC and Playfair Display for Blog Aesthetic -->
+    <link href="https://fonts.loli.net/css2?family=Caveat:wght@400;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
       @import "tailwindcss/base";
       @import "tailwindcss/components";
@@ -43,26 +24,23 @@
       .font-receipt {
         font-family: 'Courier Prime', 'Courier New', Courier, monospace;
       }
-      /* Restore aesthetic handwriting font with system fallbacks. 
-         Added 'Caveat' for readable English handwriting. 
-         'Ma Shan Zheng' remains for Chinese. */
+      /* Aesthetic handwriting font */
       .font-handwriting {
         font-family: 'Caveat', 'Ma Shan Zheng', 'KaiTi', 'STKaiti', '楷体', cursive;
       }
-      /* Hide scrollbar completely and prevent scrolling */
+      /* Blog Heading Font */
+      .font-serif-title {
+        font-family: 'Playfair Display', 'Noto Serif SC', serif;
+      }
+      
+      /* Hide scrollbar mostly but allow scrolling for blog */
       body {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-        overflow: hidden; /* Prevent scrolling */
-        /* Set background to the blue-white gradient */
-        background: linear-gradient(to bottom right, #00416A, #E4E5E6);
-        background-attachment: fixed;
-        height: 100vh;
-        width: 100vw;
+        background-color: #fafaf9; /* stone-50 */
+        color: #1c1917; /* stone-900 */
+        min-height: 100vh;
       }
-      body::-webkit-scrollbar {
-        display: none;
-      }
+      
+      /* Animations */
       @keyframes print-receipt {
         0% { transform: translateY(-100%); opacity: 0; }
         100% { transform: translateY(0); opacity: 1; }
@@ -75,9 +53,13 @@
         100% { opacity: 1; }
       }
       .animate-fade-in {
-        animation: fade-in 0.3s ease-out forwards;
+        animation: fade-in 0.5s ease-out forwards;
       }
     </style>
+  <script>
+    // Polyfill for global to prevent "Uncaught ReferenceError: global is not defined"
+    window.global = window;
+  </script>
   <script type="importmap">
 {
   "imports": {
@@ -93,13 +75,7 @@
 }
 </script>
 </head>
-  <body class="text-white">
-    <!-- WeChat/QQ Sharing Optimization Hack: Place a hidden image at the top of the body -->
-    <!-- The crawler picks the first image > 300x300 as the thumbnail if JSSDK is not used -->
-    <div style="position: absolute; top: 0; left: 0; width: 0; height: 0; overflow: hidden; opacity: 0; z-index: -1;">
-        <img src="https://images.pexels.com/photos/57980/pexels-photo-57980.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop" alt="Thumbnail" />
-    </div>
-
+  <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
