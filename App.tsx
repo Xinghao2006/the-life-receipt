@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import Blog from './components/Blog';
 import ReceiptGenerator from './components/ReceiptGenerator';
 import MoodMixtape from './components/MoodMixtape';
-import RetroGameCartridge from './components/RetroGameCartridge';
+import PolaroidGenerator from './components/PolaroidGenerator';
+import AmbianceMixer from './components/AmbianceMixer';
 
-type ActiveTool = 'receipt' | 'mixtape' | 'game' | null;
+type ActiveTool = 'receipt' | 'mixtape' | 'polaroid' | 'mixer' | null;
 
 const App: React.FC = () => {
   const [activeTool, setActiveTool] = useState<ActiveTool>(null);
@@ -22,8 +23,10 @@ const App: React.FC = () => {
             setActiveTool('receipt');
         } else if (hash.includes('tool=mixtape')) {
             setActiveTool('mixtape');
-        } else if (hash.includes('tool=game')) {
-            setActiveTool('game');
+        } else if (hash.includes('tool=polaroid')) {
+            setActiveTool('polaroid');
+        } else if (hash.includes('tool=mixer')) {
+            setActiveTool('mixer');
         }
     };
 
@@ -96,7 +99,8 @@ const App: React.FC = () => {
       
       if (toolId === 'receipt') setActiveTool('receipt');
       if (toolId === 'mixtape') setActiveTool('mixtape');
-      if (toolId === 'game') setActiveTool('game');
+      if (toolId === 'polaroid') setActiveTool('polaroid');
+      if (toolId === 'mixer') setActiveTool('mixer');
   };
 
   const handleBackToBlog = () => {
@@ -153,14 +157,25 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Tool Layer - Game */}
+      {/* Tool Layer - Polaroid Generator */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
-            activeTool === 'game' ? 'translate-y-0' : 'translate-y-[110%]'
+            activeTool === 'polaroid' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        <div className="h-full w-full overflow-y-auto bg-[#1a1b26]">
-            <RetroGameCartridge onBack={handleBackToBlog} />
+        <div className="h-full w-full overflow-y-auto bg-[#292524]">
+            <PolaroidGenerator onBack={handleBackToBlog} />
+        </div>
+      </div>
+
+      {/* Tool Layer - Ambiance Mixer */}
+      <div 
+        className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
+            activeTool === 'mixer' ? 'translate-y-0' : 'translate-y-[110%]'
+        }`}
+      >
+        <div className="h-full w-full overflow-y-auto bg-[#0f172a]">
+            <AmbianceMixer onBack={handleBackToBlog} />
         </div>
       </div>
 

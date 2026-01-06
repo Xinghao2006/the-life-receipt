@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Mic, Pause, Headphones, Tv, Video, Mail, CassetteTape, Volume2, Camera, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Sparkles, Mic, Pause, Headphones, Tv, Video, Mail, CassetteTape, Volume2, Camera, ArrowLeft, ArrowRight, Gamepad2 } from 'lucide-react';
 
 interface BlogProps {
   onOpenTool: (id: string) => void;
@@ -31,10 +31,19 @@ const TOOLS = [
         id: 'polaroid',
         title: "Polaroid Lab",
         subtitle: "时光拍立得",
-        desc: "定格瞬间。上传照片，生成复古质感拍立得。",
+        desc: "定格瞬间。生成带有做旧效果和时间戳的拍立得。",
         icon: <Camera size={16} />,
         bgGradient: "from-stone-900 to-neutral-900",
         accent: "text-red-400"
+    },
+    {
+        id: 'game',
+        title: "Focus Cartridge",
+        subtitle: "番茄钟卡带",
+        desc: "插入游戏卡带，开始一段25分钟的专注冒险。",
+        icon: <Gamepad2 size={16} />,
+        bgGradient: "from-slate-900 to-blue-900",
+        accent: "text-cyan-400"
     },
     {
         id: 'mixer',
