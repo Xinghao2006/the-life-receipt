@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Blog from './components/Blog';
 import ReceiptGenerator from './components/ReceiptGenerator';
+import MoodMixtape from './components/MoodMixtape';
 
-type ViewMode = 'blog' | 'tool';
+type ActiveTool = 'receipt' | 'mixtape' | null;
 
 const App: React.FC = () => {
-  const [view, setView] = useState<ViewMode>('blog');
+  const [activeTool, setActiveTool] = useState<ActiveTool>(null);
   
   // Audio State lifted to App level to persist playback across views
   const [isPlaying, setIsPlaying] = useState(false);
@@ -17,7 +18,9 @@ const App: React.FC = () => {
     const checkHash = () => {
         const hash = window.location.hash;
         if (hash.includes('config=')) {
-            setView('tool');
+            setActiveTool('receipt');
+        } else if (hash.includes('tool=mixtape')) {
+            setActiveTool('mixtape');
         }
     };
 
@@ -38,11 +41,10 @@ const App: React.FC = () => {
     if (isPlaying) {
         // Fade In
         audio.play().catch(e => console.log("Audio play failed:", e));
-        let volume = audio.volume; // Start from current volume (usually 0 if just loaded, or current if toggled fast)
-        // If starting fresh, ensure volume is 0
+        let volume = audio.volume; // Start from current volume
         if (audio.paused) audio.volume = 0; 
         
-        const targetVolume = 0.5; // Max volume
+        const targetVolume = 0.5; 
         const step = 0.05;
 
         fadeIntervalRef.current = window.setInterval(() => {
@@ -51,7 +53,7 @@ const App: React.FC = () => {
             } else {
                 if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
             }
-        }, 100); // Update every 100ms
+        }, 100);
     } else {
         // Fade Out
         const step = 0.05;
@@ -74,7 +76,8 @@ const App: React.FC = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleOpenTool = () => {
+  const handleOpenTool = (toolId: string) => {
+      // Clear hash if moving to a fresh tool to avoid state conflicts
       if (!window.location.hash.includes('config=')) {
           try {
             window.history.replaceState(null, '', window.location.pathname);
@@ -82,7 +85,9 @@ const App: React.FC = () => {
             console.warn('Navigation history update failed:', e);
           }
       }
-      setView('tool');
+      
+      if (toolId === 'receipt') setActiveTool('receipt');
+      if (toolId === 'mixtape') setActiveTool('mixtape');
   };
 
   const handleBackToBlog = () => {
@@ -91,14 +96,12 @@ const App: React.FC = () => {
       } catch (e) {
           console.warn('Navigation history update failed:', e);
           try {
-            if (window.location.hash) {
-                window.location.hash = '';
-            }
+            window.location.hash = '';
           } catch(e2) {
              console.warn('Hash update failed:', e2);
           }
       }
-      setView('blog');
+      setActiveTool(null);
   };
 
   return (
@@ -109,7 +112,7 @@ const App: React.FC = () => {
       {/* Blog View (Base Layer) */}
       <div 
         className={`transition-all duration-700 ease-in-out transform ${
-            view === 'tool' ? 'scale-95 opacity-50 blur-[2px]' : 'scale-100 opacity-100'
+            activeTool ? 'scale-95 opacity-50 blur-[2px]' : 'scale-100 opacity-100'
         }`}
       >
         <Blog 
@@ -119,19 +122,28 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Tool View (Slide Up Layer) */}
+      {/* Tool Layer - Receipt */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
-            view === 'tool' ? 'translate-y-0' : 'translate-y-[110%]'
+            activeTool === 'receipt' ? 'translate-y-0' : 'translate-y-[110%]'
         }`}
       >
-        {/* Only render contents if view is tool or transitioning (simplified here to always render but hide via css for smooth anim) 
-            However, to reset state properly, sometimes unmounting is desired. 
-            For smooth CSS slide-up, keeping it mounted is better. */}
         <div className="h-full w-full overflow-y-auto bg-[#fafaf9]">
             <ReceiptGenerator onBack={handleBackToBlog} />
         </div>
       </div>
+
+       {/* Tool Layer - Mixtape */}
+       <div 
+        className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
+            activeTool === 'mixtape' ? 'translate-y-0' : 'translate-y-[110%]'
+        }`}
+      >
+        <div className="h-full w-full overflow-y-auto bg-[#451a03]">
+            <MoodMixtape onBack={handleBackToBlog} />
+        </div>
+      </div>
+
     </div>
   );
 };

@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
-import { ArrowRight, Sparkles, Mic, Play, Pause, Headphones, Tv, Video, Mail, Code, Coffee, Terminal } from 'lucide-react';
+import { ArrowRight, Sparkles, Mic, Play, Pause, Headphones, Tv, Video, Mail, CassetteTape, Clapperboard, Film } from 'lucide-react';
 
 interface BlogProps {
-  onOpenTool: () => void;
+  onOpenTool: (id: string) => void;
   isPlaying: boolean;
   togglePlay: () => void;
 }
@@ -26,38 +26,38 @@ const TOOLS = [
         }
     },
     {
-        id: 'zen',
-        title: "Digital Zen Garden",
-        subtitle: "数字枯山水",
-        desc: "Coming Soon. 在混乱的比特流中寻找宁静，构建你的思维盆景。",
-        icon: <Coffee size={10} />,
-        arrowIcon: <Code size={18} />,
-        theme: {
-            bg: "bg-[#0f172a]", // Slate 900
-            accent: "bg-emerald-500",
-            textAccent: "text-emerald-300",
-            hoverText: "group-hover:to-emerald-200",
-            decoration: "decoration-emerald-500/50",
-            orb1: "from-emerald-500 via-teal-500 to-cyan-500",
-            orb2: "bg-green-500"
-        },
-        disabled: true
-    },
-    {
-        id: 'terminal',
-        title: "Retro Terminal",
-        subtitle: "复古终端机",
-        desc: "Coming Soon. 像黑客一样记录日志。CLI 是程序员最后的浪漫。",
-        icon: <Terminal size={10} />,
+        id: 'mixtape',
+        title: "Mood Mixtape",
+        subtitle: "情绪磁带生成器",
+        desc: "将此刻的情绪刻录进 A/B 面。生活是一首循环播放的 Lo-Fi。",
+        icon: <CassetteTape size={10} />,
         arrowIcon: <ArrowRight size={18} />,
         theme: {
-            bg: "bg-[#1c1917]", // Stone 900
-            accent: "bg-orange-500",
-            textAccent: "text-orange-300",
-            hoverText: "group-hover:to-orange-200",
-            decoration: "decoration-orange-500/50",
-            orb1: "from-orange-500 via-amber-500 to-yellow-500",
-            orb2: "bg-red-500"
+            bg: "bg-[#451a03]", // Amber 950ish / Dark Brown
+            accent: "bg-amber-500",
+            textAccent: "text-amber-300",
+            hoverText: "group-hover:to-amber-200",
+            decoration: "decoration-amber-500/50",
+            orb1: "from-amber-500 via-orange-500 to-yellow-500",
+            orb2: "bg-yellow-600"
+        },
+        disabled: false
+    },
+    {
+        id: 'cinema',
+        title: "Time Cinema",
+        subtitle: "时光电影院",
+        desc: "Coming Soon. 凭票入场。重映那些从未褪色的记忆片段，仅限今夜放映。",
+        icon: <Clapperboard size={10} />,
+        arrowIcon: <Film size={18} />,
+        theme: {
+            bg: "bg-[#881337]", // Rose 900
+            accent: "bg-rose-500",
+            textAccent: "text-rose-300",
+            hoverText: "group-hover:to-rose-200",
+            decoration: "decoration-rose-500/50",
+            orb1: "from-rose-500 via-red-500 to-pink-500",
+            orb2: "bg-red-800"
         },
         disabled: true
     }
@@ -69,11 +69,11 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
   return (
     <div className="min-h-screen bg-[#fafaf9] text-stone-800 font-sans selection:bg-stone-200 flex flex-col">
       
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-[#fafaf9]/80 backdrop-blur-sm z-40 border-b border-stone-100 transition-all duration-300">
+      {/* Navigation - Frosted Glass Effect Enhanced */}
+      <nav className="fixed top-0 w-full bg-[#fafaf9]/70 backdrop-blur-md z-40 border-b border-stone-100/50 transition-all duration-300 supports-[backdrop-filter]:bg-[#fafaf9]/60">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="font-serif-title font-bold text-xl tracking-tight flex items-center gap-2">
-            <div className="w-8 h-8 bg-stone-900 rounded-full flex items-center justify-center text-white">
+            <div className="w-8 h-8 bg-stone-900 rounded-full flex items-center justify-center text-white shadow-sm">
                  <Mic size={14} />
             </div>
             <span>My Podcast.</span>
@@ -107,7 +107,7 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
             <div className="flex gap-4">
                 <button 
                     onClick={togglePlay}
-                    className="flex items-center gap-2 bg-stone-900 text-white px-6 py-3 rounded-full hover:bg-stone-800 transition-all hover:scale-105 active:scale-95"
+                    className="flex items-center gap-2 bg-stone-900 text-white px-6 py-3 rounded-full hover:bg-stone-800 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-stone-900/20"
                 >
                     {isPlaying ? <Pause size={18} /> : <Headphones size={18} />}
                     <span>{isPlaying ? 'Pause Music' : 'Start Listening'}</span>
@@ -133,11 +133,11 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
                 {TOOLS.map((tool) => (
                     <div 
                         key={tool.id}
-                        onClick={!tool.disabled ? onOpenTool : undefined}
+                        onClick={() => !tool.disabled && onOpenTool(tool.id)}
                         className={`
                             relative flex-shrink-0 w-[85vw] md:w-[400px] snap-center
                             group overflow-hidden rounded-3xl p-8 text-white transition-all duration-500 
-                            ${tool.disabled ? 'cursor-not-allowed opacity-80 grayscale-[0.5]' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-2'}
+                            ${tool.disabled ? 'cursor-not-allowed opacity-80 grayscale-[0.3]' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-2'}
                             ${tool.theme.bg}
                         `}
                     >
