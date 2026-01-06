@@ -4,7 +4,7 @@ import Polaroid from './components/Polaroid';
 import Editor from './components/Editor';
 import { generatePolaroidStory } from './services/geminiService';
 import { ReceiptData, PolaroidData } from './types';
-import { Edit2, Share2, Printer } from 'lucide-react';
+import { Edit2, Share2, Printer, ExternalLink } from 'lucide-react';
 
 const DEFAULT_RECEIPT: ReceiptData = {
   dateRange: "2006.02.09 - 2026.02.09",
@@ -56,23 +56,29 @@ const App: React.FC = () => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
+  const [isWeChat, setIsWeChat] = useState(false);
 
   // Load from URL Hash (Priority) or Search (Legacy) on mount
   useEffect(() => {
+    // 1. Detect WeChat environment
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.match(/MicroMessenger/i)) {
+      setIsWeChat(true);
+    }
+
+    // 2. Load State
     const handleStateLoad = () => {
       try {
         let configStr = "";
         let isLegacyQuery = false;
 
-        // 1. Try Hash (Preferred)
-        // Format: #config=...
+        // Try Hash (Preferred)
         const hash = window.location.hash.substring(1);
         const hashParams = new URLSearchParams(hash);
         if (hashParams.has('config')) {
             configStr = hashParams.get('config') || "";
         } 
-        // 2. Try Query Params (Legacy / Fallback)
-        // Format: ?config=...
+        // Try Query Params (Legacy / Fallback)
         else {
             const searchParams = new URLSearchParams(window.location.search);
             if (searchParams.has('config')) {
@@ -88,7 +94,6 @@ const App: React.FC = () => {
             setTimeout(() => setIsPrinting(false), 1600);
 
             // If we loaded from legacy query params, migrate to hash immediately to fix the URL
-            // Only perform this if NOT in a Blob environment to avoid SecurityErrors
             if (isLegacyQuery && window.location.protocol !== 'blob:') {
                 try {
                   const url = new URL(window.location.href);
@@ -149,13 +154,9 @@ const App: React.FC = () => {
         
         // 4. Update Browser URL safely
         if (window.location.protocol === 'blob:') {
-            // In Blob environments (like Bolt/StackBlitz previews), pushState often fails or creates invalid URLs.
-            // Fallback: Direct hash assignment. The URL remains 'blob:...' but the hash updates.
-            // Note: Blob URLs are local and cannot be shared externally, but this prevents the crash.
             window.location.hash = hashString;
             await navigator.clipboard.writeText(window.location.href);
         } else {
-            // Standard Environment: Use pushState to ensure a clean URL (stripping legacy query params if any)
             const url = new URL(window.location.href);
             url.search = ""; 
             url.hash = hashString;
@@ -167,7 +168,6 @@ const App: React.FC = () => {
         setShowShareToast(true);
       } catch (err) {
         console.error("Share failed", err);
-        // Absolute fallback if history API or clipboard fails
         try {
             window.location.hash = `config=${encodeURIComponent(toBase64(JSON.stringify(receiptData)))}`;
         } catch(e) {}
@@ -245,6 +245,44 @@ const App: React.FC = () => {
             data={polaroidData} 
             onClose={() => setPolaroidData(null)} 
         />
+      )}
+
+      {/* WeChat Guide Overlay */}
+      {isWeChat && (
+        <div 
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center pt-8 px-8 text-white animate-fade-in"
+            onClick={() => setIsWeChat(false)}
+        >
+            <div className="w-full flex justify-end mb-4">
+               {/* Curved Arrow pointing to top right */}
+               <svg width="80" height="80" viewBox="0 0 100 100" className="text-white transform rotate-12 animate-bounce">
+                  <path d="M10,50 Q40,10 80,10" fill="none" stroke="currentColor" strokeWidth="3" markerEnd="url(#arrowhead)" />
+                  <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                      <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" />
+                    </marker>
+                  </defs>
+               </svg>
+            </div>
+            
+            <h2 className="text-2xl font-bold mb-4 font-handwriting">糟糕，被拦截了...</h2>
+            <div className="space-y-4 text-center max-w-xs">
+                <p className="text-gray-300 leading-relaxed">
+                   微信可能不支持直接访问或保存图片。
+                </p>
+                <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                    <p className="font-bold text-lg text-yellow-400 mb-2">💡 正确打开方式：</p>
+                    <ol className="text-left text-sm space-y-2 list-decimal list-inside text-gray-300">
+                        <li>点击右上角的 <span className="font-bold text-white">···</span></li>
+                        <li>选择 <span className="font-bold text-white">在浏览器打开</span></li>
+                        <li>(Safari 或 Chrome)</li>
+                    </ol>
+                </div>
+            </div>
+            <button className="mt-12 text-gray-500 text-sm underline">
+                我已知晓，继续尝试访问
+            </button>
+        </div>
       )}
     </div>
   );
