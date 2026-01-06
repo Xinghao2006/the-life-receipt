@@ -1,31 +1,74 @@
-import React, { useState, useRef } from 'react';
-import { ArrowRight, Sparkles, Mic, Play, Pause, Headphones, Tv, Video, Mail } from 'lucide-react';
+import React, { useRef } from 'react';
+import { ArrowRight, Sparkles, Mic, Play, Pause, Headphones, Tv, Video, Mail, Code, Coffee, Terminal } from 'lucide-react';
 
 interface BlogProps {
   onOpenTool: () => void;
+  isPlaying: boolean;
+  togglePlay: () => void;
 }
 
-const Blog: React.FC<BlogProps> = ({ onOpenTool }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(e => console.log("Audio play failed:", e));
-      }
-      setIsPlaying(!isPlaying);
+const TOOLS = [
+    {
+        id: 'receipt',
+        title: "The Life Receipt",
+        subtitle: "人生收据生成器",
+        desc: "如果人生是一张超市小票，上面会打印什么？生成你的年度经历收据。",
+        icon: <Sparkles size={10} />,
+        arrowIcon: <ArrowRight size={18} />,
+        theme: {
+            bg: "bg-stone-900",
+            accent: "bg-indigo-500",
+            textAccent: "text-indigo-300",
+            hoverText: "group-hover:to-indigo-200",
+            decoration: "decoration-indigo-500/50",
+            orb1: "from-indigo-500 via-purple-500 to-pink-500",
+            orb2: "bg-blue-500"
+        }
+    },
+    {
+        id: 'zen',
+        title: "Digital Zen Garden",
+        subtitle: "数字枯山水",
+        desc: "Coming Soon. 在混乱的比特流中寻找宁静，构建你的思维盆景。",
+        icon: <Coffee size={10} />,
+        arrowIcon: <Code size={18} />,
+        theme: {
+            bg: "bg-[#0f172a]", // Slate 900
+            accent: "bg-emerald-500",
+            textAccent: "text-emerald-300",
+            hoverText: "group-hover:to-emerald-200",
+            decoration: "decoration-emerald-500/50",
+            orb1: "from-emerald-500 via-teal-500 to-cyan-500",
+            orb2: "bg-green-500"
+        },
+        disabled: true
+    },
+    {
+        id: 'terminal',
+        title: "Retro Terminal",
+        subtitle: "复古终端机",
+        desc: "Coming Soon. 像黑客一样记录日志。CLI 是程序员最后的浪漫。",
+        icon: <Terminal size={10} />,
+        arrowIcon: <ArrowRight size={18} />,
+        theme: {
+            bg: "bg-[#1c1917]", // Stone 900
+            accent: "bg-orange-500",
+            textAccent: "text-orange-300",
+            hoverText: "group-hover:to-orange-200",
+            decoration: "decoration-orange-500/50",
+            orb1: "from-orange-500 via-amber-500 to-yellow-500",
+            orb2: "bg-red-500"
+        },
+        disabled: true
     }
-  };
+];
+
+const Blog: React.FC<BlogProps> = ({ onOpenTool, isPlaying, togglePlay }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="min-h-screen bg-[#fafaf9] text-stone-800 font-sans selection:bg-stone-200 flex flex-col">
       
-      {/* Hidden Audio Element - Using a chill lo-fi track from Pixabay (Free for commercial use) */}
-      <audio ref={audioRef} loop src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" />
-
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-[#fafaf9]/80 backdrop-blur-sm z-40 border-b border-stone-100 transition-all duration-300">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -43,11 +86,10 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool }) => {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-grow w-full max-w-5xl mx-auto px-6 pt-32 pb-20">
+      <main className="flex-grow w-full max-w-5xl mx-auto px-6 pt-32 pb-20 overflow-hidden">
         
-        {/* Hero Section */}
-        <header className="mb-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
+        {/* Header Section */}
+        <header className="mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-bold uppercase tracking-wider mb-6">
                 <span className="relative flex h-2 w-2">
                   <span className={`absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75 ${isPlaying ? 'animate-ping' : ''}`}></span>
@@ -71,44 +113,73 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool }) => {
                     <span>{isPlaying ? 'Pause Music' : 'Start Listening'}</span>
                 </button>
             </div>
-          </div>
-          
-          {/* Featured Tool Entry */}
-          <div 
-            onClick={onOpenTool}
-            className="group relative overflow-hidden bg-stone-900 rounded-3xl p-8 text-white cursor-pointer transition-all duration-500 hover:shadow-2xl hover:-translate-y-2"
-          >
-             {/* Abstract Background Art */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity duration-700"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500 rounded-full blur-[80px] opacity-10 group-hover:opacity-20 transition-opacity"></div>
-            
-            <div className="relative z-10 h-full flex flex-col justify-between min-h-[300px]">
-              <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2 text-indigo-300 font-bold text-[10px] uppercase tracking-widest border border-indigo-500/30 px-2 py-1 rounded-full bg-indigo-500/10 backdrop-blur-md">
-                    <Sparkles size={10} />
-                    <span>Interactive Tool</span>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all duration-300">
-                    <ArrowRight size={18} />
-                  </div>
-              </div>
-
-              <div>
-                <h2 className="font-serif-title text-3xl font-medium mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-indigo-200 transition-all">The Life Receipt</h2>
-                <div className="w-12 h-1 bg-indigo-500 mb-4 rounded-full"></div>
-                <p className="text-stone-300 text-sm leading-relaxed max-w-xs mb-4">
-                  如果人生是一张超市小票，上面会打印什么？<br/>
-                  生成你的年度经历收据，探索隐藏在条形码下的回忆。
-                </p>
-                <span className="text-xs font-mono text-indigo-300 group-hover:underline decoration-indigo-500/50 underline-offset-4">Click to generate →</span>
-              </div>
-            </div>
-          </div>
         </header>
 
-        <div className="border-t border-stone-200 my-16"></div>
+        {/* Carousel Section */}
+        <div className="mb-20">
+            <div className="flex justify-between items-end mb-6">
+                <h3 className="font-serif-title text-2xl font-bold text-stone-900">Interactive Tools</h3>
+                <div className="flex gap-2">
+                    {/* Visual indicators for scrolling if needed, but native scrollbar is hidden */}
+                </div>
+            </div>
 
-        {/* Info & Connect Section (Reorganized after removing episodes) */}
+            {/* Scroll Container */}
+            <div 
+                ref={scrollContainerRef}
+                className="flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory hide-scrollbar -mx-6 px-6"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+                {TOOLS.map((tool) => (
+                    <div 
+                        key={tool.id}
+                        onClick={!tool.disabled ? onOpenTool : undefined}
+                        className={`
+                            relative flex-shrink-0 w-[85vw] md:w-[400px] snap-center
+                            group overflow-hidden rounded-3xl p-8 text-white transition-all duration-500 
+                            ${tool.disabled ? 'cursor-not-allowed opacity-80 grayscale-[0.5]' : 'cursor-pointer hover:shadow-2xl hover:-translate-y-2'}
+                            ${tool.theme.bg}
+                        `}
+                    >
+                         {/* Abstract Background Art */}
+                        <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity duration-700 ${tool.theme.orb1}`}></div>
+                        <div className={`absolute bottom-0 left-0 w-48 h-48 rounded-full blur-[80px] opacity-10 group-hover:opacity-20 transition-opacity ${tool.theme.orb2}`}></div>
+                        
+                        <div className="relative z-10 h-full flex flex-col justify-between min-h-[260px]">
+                            <div className="flex justify-between items-start">
+                                <div className={`flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest border px-2 py-1 rounded-full backdrop-blur-md ${tool.theme.textAccent} border-${tool.theme.textAccent}/30 bg-white/5`}>
+                                    {tool.icon}
+                                    <span>{tool.disabled ? 'Coming Soon' : 'Interactive Tool'}</span>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all duration-300">
+                                    {tool.arrowIcon}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h2 className={`font-serif-title text-3xl font-medium mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white ${tool.theme.hoverText} transition-all`}>
+                                    {tool.title}
+                                </h2>
+                                <div className={`w-12 h-1 mb-4 rounded-full ${tool.theme.accent}`}></div>
+                                <h3 className="text-white/80 font-medium text-sm mb-2">{tool.subtitle}</h3>
+                                <p className="text-stone-400 text-xs leading-relaxed max-w-xs mb-4">
+                                    {tool.desc}
+                                </p>
+                                {!tool.disabled && (
+                                    <span className={`text-xs font-mono ${tool.theme.textAccent} group-hover:underline ${tool.theme.decoration} underline-offset-4`}>
+                                        Click to generate →
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <div className="border-t border-stone-200 mb-16"></div>
+
+        {/* Info & Connect Section */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
             {/* About Card */}
@@ -120,7 +191,6 @@ const Blog: React.FC<BlogProps> = ({ onOpenTool }) => {
                     </div>
                     <div>
                          <p className="text-stone-600 text-sm leading-relaxed">
-                            前端工程师 & 极简主义者。<br/>
                             构建数字工具，探讨代码、设计与生活的交汇点。<br/>
                             喜欢在深夜写代码，在清晨喝咖啡。
                         </p>
