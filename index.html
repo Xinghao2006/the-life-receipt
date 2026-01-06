@@ -8,7 +8,14 @@
     
     <!-- SEO & Social Media Tags -->
     <title>My Podcast | 记录生活</title>
-    <meta name="description" content="A minimalist digital garden and playground.">
+    <meta name="description" content="A minimalist digital garden and playground featuring The Life Receipt generator.">
+
+    <!-- Open Graph & WeChat Share Metadata -->
+    <meta property="og:title" content="My Podcast | 记录生活">
+    <meta property="og:description" content="A minimalist digital garden and playground featuring The Life Receipt generator.">
+    <meta property="og:image" content="https://p.sda1.dev/30/95715e4c030bb436ea3cb2e380150f33/68f0097f66e974affa6042f56e82a12a.jpg">
+    <meta property="og:url" content="">
+    <meta property="og:type" content="website">
     
     <!-- Use fonts.loli.net (Domestic mirror for Google Fonts) -->
     <link rel="preconnect" href="https://fonts.loli.net">
@@ -76,6 +83,11 @@
 </script>
 </head>
   <body>
+    <!-- Hidden Image for WeChat Share scraping (Fallback when JSSDK is not configured) -->
+    <div style="position: absolute; width: 0; height: 0; overflow: hidden; top: 0; left: 0; z-index: -1;">
+      <img src="https://p.sda1.dev/30/95715e4c030bb436ea3cb2e380150f33/68f0097f66e974affa6042f56e82a12a.jpg" alt="WeChat Share Cover" />
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
