@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ReceiptData, ReceiptItem, HiddenContentItem } from '../types';
-import { Plus, Trash2, X, Save, Image as ImageIcon, Type as TypeIcon } from 'lucide-react';
+import { Plus, Trash2, X, Save, Image as ImageIcon, Type as TypeIcon, Upload, Loader2 } from 'lucide-react';
 
 interface EditorProps {
   data: ReceiptData;
@@ -10,6 +10,7 @@ interface EditorProps {
 }
 
 const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
   
   const updateField = (field: keyof ReceiptData, value: string) => {
     onChange({ ...data, [field]: value } as any);
@@ -56,6 +57,40 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
   const removeHiddenContent = (id: string) => {
     const currentContent = data.hiddenContent || [];
     onChange({ ...data, hiddenContent: currentContent.filter(item => item.id !== id) });
+  };
+
+  // --- Image Upload Logic ---
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, id: string) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingId(id);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Use ImgBB Free API (Note: Public key for demo purposes, robust apps should use backend proxy)
+      const API_KEY = '6d207e02198a847aa98d0a2a901485a5'; 
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        updateHiddenContent(id, result.data.url);
+      } else {
+        alert('上传失败，请重试或检查图片大小');
+        console.error('ImgBB Upload Error:', result);
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('网络错误，上传失败');
+    } finally {
+      setUploadingId(null);
+    }
   };
 
   return (
@@ -152,25 +187,59 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
           
           <div className="space-y-3">
              {(data.hiddenContent || []).map((item, idx) => (
-               <div key={item.id} className="bg-gray-800 p-3 rounded border border-gray-700 relative group">
+               <div key={item.id} className="bg-gray-800 p-3 rounded border border-gray-700 relative group transition-all">
                   <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
                           {item.type === 'image' ? <ImageIcon size={10} /> : <TypeIcon size={10} />}
                           {item.type === 'image' ? '图片素材' : '文字素材'}
                       </span>
-                      <div className="flex gap-1">
-                          <button onClick={() => removeHiddenContent(item.id)} className="p-1 hover:bg-red-900/50 text-red-400 rounded ml-2"><Trash2 size={12}/></button>
-                      </div>
+                      <button onClick={() => removeHiddenContent(item.id)} className="p-1 hover:bg-red-900/50 text-red-400 rounded"><Trash2 size={12}/></button>
                   </div>
 
                   {item.type === 'image' ? (
-                      <input 
-                        type="text"
-                        value={item.content}
-                        onChange={(e) => updateHiddenContent(item.id, e.target.value)}
-                        placeholder="请输入图片链接 (https://...)"
-                        className="w-full bg-gray-900 text-white rounded p-2 text-sm border border-gray-600 focus:border-purple-500 outline-none"
-                      />
+                      <div className="flex items-center gap-4">
+                          {/* Hidden Input */}
+                          <input 
+                            type="file" 
+                            id={`file-${item.id}`}
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleFileUpload(e, item.id)}
+                            disabled={uploadingId === item.id}
+                          />
+
+                          {/* Preview or Placeholder */}
+                          {item.content ? (
+                              <div className="relative w-20 h-20 bg-black rounded overflow-hidden border border-gray-600 shrink-0">
+                                  <img src={item.content} alt="Preview" className="w-full h-full object-cover" />
+                              </div>
+                          ) : (
+                              <div className="w-20 h-20 bg-gray-900 rounded border border-dashed border-gray-600 flex items-center justify-center text-gray-600 shrink-0">
+                                  <ImageIcon size={20} />
+                              </div>
+                          )}
+
+                          {/* Action Button */}
+                          <div className="flex-1">
+                              {uploadingId === item.id ? (
+                                  <div className="flex items-center gap-2 text-purple-400 text-sm">
+                                      <Loader2 size={16} className="animate-spin" />
+                                      上传中...
+                                  </div>
+                              ) : (
+                                  <label 
+                                    htmlFor={`file-${item.id}`}
+                                    className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-xs text-white transition-colors border border-gray-600"
+                                  >
+                                      <Upload size={14} />
+                                      {item.content ? "更换图片" : "上传图片"}
+                                  </label>
+                              )}
+                              <p className="text-[10px] text-gray-500 mt-2">
+                                  {item.content ? "图片已就绪" : "点击按钮从设备选择"}
+                              </p>
+                          </div>
+                      </div>
                   ) : (
                       <textarea 
                         value={item.content}
