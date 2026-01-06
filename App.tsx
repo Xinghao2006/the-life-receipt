@@ -27,8 +27,6 @@ const App: React.FC = () => {
             setActiveTool('polaroid');
         } else if (hash.includes('tool=mixer')) {
             setActiveTool('mixer');
-        } else {
-            setActiveTool(null);
         }
     };
 
@@ -92,15 +90,20 @@ const App: React.FC = () => {
   };
 
   const handleOpenTool = (toolId: string) => {
-      // Safe navigation using hash only to prevent SecurityError in blob/iframe contexts
-      window.location.hash = `tool=${toolId}`;
+      // Clear hash if moving to a fresh tool to avoid state conflicts
+      if (!window.location.hash.includes('config=')) {
+          try {
+            window.history.replaceState(null, '', window.location.pathname);
+          } catch (e) {
+            console.warn('Navigation history update failed:', e);
+          }
+      }
       
       // Auto-pause background music when entering an immersive tool
       if (isPlaying) {
           setIsPlaying(false);
       }
       
-      // Manually set state for instant response
       if (toolId === 'receipt') setActiveTool('receipt');
       if (toolId === 'mixtape') setActiveTool('mixtape');
       if (toolId === 'polaroid') setActiveTool('polaroid');
@@ -108,14 +111,22 @@ const App: React.FC = () => {
   };
 
   const handleBackToBlog = () => {
-      // Safe navigation: just clear the hash.
-      window.location.hash = '';
+      try {
+          window.history.pushState(null, '', window.location.pathname);
+      } catch (e) {
+          console.warn('Navigation history update failed:', e);
+          try {
+            window.location.hash = '';
+          } catch(e2) {
+             console.warn('Hash update failed:', e2);
+          }
+      }
       setActiveTool(null);
   };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#fafaf9]">
-      {/* Persistent Audio Element */}
+      {/* Persistent Audio Element - Using a reliable generic file or allowing silence if fails */}
       <audio ref={audioRef} loop crossOrigin="anonymous">
           <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg" />
       </audio>
@@ -133,7 +144,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Tool Layer - Receipt */}
+      {/* Tool Layer - Receipt (Paper Texture Background) */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'receipt' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -150,7 +161,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-       {/* Tool Layer - Mixtape */}
+       {/* Tool Layer - Mixtape (Cosmic Lo-Fi Background) */}
        <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'mixtape' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -166,7 +177,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Tool Layer - Polaroid Generator */}
+      {/* Tool Layer - Polaroid Generator (Darkroom Charcoal Background) */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'polaroid' ? 'translate-y-0' : 'translate-y-[110%]'
@@ -183,7 +194,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Tool Layer - Ambiance Mixer */}
+      {/* Tool Layer - Ambiance Mixer (Deep Ocean/Nature Background) */}
       <div 
         className={`fixed inset-0 z-50 transition-transform duration-700 cubic-bezier(0.16, 1, 0.3, 1) ${
             activeTool === 'mixer' ? 'translate-y-0' : 'translate-y-[110%]'
