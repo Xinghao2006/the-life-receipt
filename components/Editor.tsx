@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ReceiptData, ReceiptItem, HiddenContentItem } from '../types';
-import { Plus, Trash2, X, Save, Image as ImageIcon, Type as TypeIcon, Upload, Loader2 } from 'lucide-react';
+import { Plus, Trash2, X, Save, Image as ImageIcon, Type as TypeIcon, Upload, Loader2, AlertCircle } from 'lucide-react';
 
 interface EditorProps {
   data: ReceiptData;
@@ -70,8 +70,10 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
       const formData = new FormData();
       formData.append('image', file);
       
-      // Use ImgBB Free API (Note: Public key for demo purposes, robust apps should use backend proxy)
-      const API_KEY = '6d207e02198a847aa98d0a2a901485a5'; 
+      // Try a different ImgBB Key, but keep logic robust
+      // Note: Ideally users should supply their own key in a real production app
+      const API_KEY = 'e7a9359d949437140733159275034633'; 
+      
       const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
         method: 'POST',
         body: formData,
@@ -82,12 +84,25 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
       if (result.success) {
         updateHiddenContent(id, result.data.url);
       } else {
-        alert('上传失败，请重试或检查图片大小');
-        console.error('ImgBB Upload Error:', result);
+        console.warn('ImgBB Upload Failed:', result);
+        throw new Error(result.error?.message || 'API Error');
       }
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('网络错误，上传失败');
+      console.error('Upload failed, falling back to Base64:', error);
+      
+      // Fallback: Use Base64 if API fails (Works for small images < 100KB usually)
+      if (file.size < 150 * 1024) { // Limit fallback to 150KB to prevent URL crashes
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              if (typeof reader.result === 'string') {
+                  updateHiddenContent(id, reader.result);
+                  alert(`图床上传失败 (${(error as Error).message})，已自动切换为本地存储模式。\n注意：生成的分享链接可能会变得很长。`);
+              }
+          };
+          reader.readAsDataURL(file);
+      } else {
+          alert(`上传失败: ${(error as Error).message}\n且图片过大 (${(file.size/1024).toFixed(0)}KB) 无法使用本地存储。建议使用小于100KB的图片。`);
+      }
     } finally {
       setUploadingId(null);
     }
@@ -235,8 +250,12 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
                                       {item.content ? "更换图片" : "上传图片"}
                                   </label>
                               )}
-                              <p className="text-[10px] text-gray-500 mt-2">
-                                  {item.content ? "图片已就绪" : "点击按钮从设备选择"}
+                              <p className="text-[10px] text-gray-500 mt-2 flex items-center gap-1">
+                                  {item.content ? (
+                                    item.content.startsWith('data:') ? 
+                                    <span className="text-yellow-500 flex items-center gap-1"><AlertCircle size={10}/> 已使用本地存储模式</span> : 
+                                    "图片链接已生成 (隐藏)"
+                                  ) : "点击按钮从设备选择"}
                               </p>
                           </div>
                       </div>
