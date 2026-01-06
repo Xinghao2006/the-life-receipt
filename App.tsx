@@ -128,13 +128,33 @@ const App: React.FC = () => {
   }, []);
 
   const handleBarcodeClick = async () => {
-    // If user customized hidden content, use it
+    // Logic: Randomly select 1 Image and 1 Text from the pool (if available)
     if (receiptData.hiddenContent && receiptData.hiddenContent.length > 0) {
-        setPolaroidData({
-            items: receiptData.hiddenContent,
-            date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
-        });
-        return;
+        const images = receiptData.hiddenContent.filter(i => i.type === 'image');
+        const texts = receiptData.hiddenContent.filter(i => i.type === 'text');
+
+        const selectedItems: HiddenContentItem[] = [];
+
+        // 1. Random Image
+        if (images.length > 0) {
+            const randomImg = images[Math.floor(Math.random() * images.length)];
+            selectedItems.push(randomImg);
+        }
+
+        // 2. Random Text
+        if (texts.length > 0) {
+            const randomTxt = texts[Math.floor(Math.random() * texts.length)];
+            selectedItems.push(randomTxt);
+        }
+
+        // Only display if we found something, otherwise fall through to legacy/auto logic
+        if (selectedItems.length > 0) {
+            setPolaroidData({
+                items: selectedItems,
+                date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
+            });
+            return;
+        }
     }
 
     // Fallback/Legacy Check: If user had old format but migration failed for some reason

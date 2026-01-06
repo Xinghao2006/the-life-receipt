@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReceiptData, ReceiptItem, HiddenContentItem } from '../types';
-import { Plus, Trash2, X, Save, Image as ImageIcon, Type as TypeIcon, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, X, Save, Image as ImageIcon, Type as TypeIcon } from 'lucide-react';
 
 interface EditorProps {
   data: ReceiptData;
@@ -56,16 +56,6 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
   const removeHiddenContent = (id: string) => {
     const currentContent = data.hiddenContent || [];
     onChange({ ...data, hiddenContent: currentContent.filter(item => item.id !== id) });
-  };
-
-  const moveHiddenContent = (index: number, direction: 'up' | 'down') => {
-    const currentContent = [...(data.hiddenContent || [])];
-    if (direction === 'up' && index > 0) {
-      [currentContent[index], currentContent[index - 1]] = [currentContent[index - 1], currentContent[index]];
-    } else if (direction === 'down' && index < currentContent.length - 1) {
-      [currentContent[index], currentContent[index + 1]] = [currentContent[index + 1], currentContent[index]];
-    }
-    onChange({ ...data, hiddenContent: currentContent });
   };
 
   return (
@@ -152,9 +142,12 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
         <section className="space-y-4 pt-4 border-t border-gray-700">
           <div className="flex flex-col gap-2">
             <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
-              <ImageIcon size={16} /> 彩蛋配置 (扫描条码后显示)
+              <ImageIcon size={16} /> 彩蛋配置池 (盲盒模式)
             </h3>
-            <p className="text-[10px] text-gray-500">点击下方按钮添加多段文字或图片，支持排序。</p>
+            <p className="text-[10px] text-gray-400">
+                添加多个图片和文字作为<b>“盲盒”池</b>。<br/>
+                每次扫描条形码，系统会从中<b>随机抽取</b>一张图片和一段文字组合展示。
+            </p>
           </div>
           
           <div className="space-y-3">
@@ -163,11 +156,9 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
                   <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] uppercase font-bold text-gray-500 flex items-center gap-1">
                           {item.type === 'image' ? <ImageIcon size={10} /> : <TypeIcon size={10} />}
-                          {item.type === 'image' ? '图片' : '文字'}
+                          {item.type === 'image' ? '图片素材' : '文字素材'}
                       </span>
                       <div className="flex gap-1">
-                          <button onClick={() => moveHiddenContent(idx, 'up')} disabled={idx === 0} className="p-1 hover:bg-gray-700 rounded disabled:opacity-30"><ArrowUp size={12}/></button>
-                          <button onClick={() => moveHiddenContent(idx, 'down')} disabled={idx === (data.hiddenContent?.length || 0) - 1} className="p-1 hover:bg-gray-700 rounded disabled:opacity-30"><ArrowDown size={12}/></button>
                           <button onClick={() => removeHiddenContent(item.id)} className="p-1 hover:bg-red-900/50 text-red-400 rounded ml-2"><Trash2 size={12}/></button>
                       </div>
                   </div>
@@ -185,7 +176,7 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
                         value={item.content}
                         onChange={(e) => updateHiddenContent(item.id, e.target.value)}
                         rows={2}
-                        placeholder="输入一段文字..."
+                        placeholder="输入一段可选的文案..."
                         className="w-full bg-gray-900 text-white rounded p-2 text-sm border border-gray-600 focus:border-purple-500 outline-none font-handwriting"
                       />
                   )}
@@ -195,10 +186,10 @@ const Editor: React.FC<EditorProps> = ({ data, onChange, onClose, onSave }) => {
 
           <div className="flex gap-2">
              <button onClick={() => addHiddenContent('text')} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded text-xs flex items-center justify-center gap-2 transition-colors">
-                <TypeIcon size={14} /> 添加文字
+                <TypeIcon size={14} /> 添加文字素材
              </button>
              <button onClick={() => addHiddenContent('image')} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded text-xs flex items-center justify-center gap-2 transition-colors">
-                <ImageIcon size={14} /> 添加图片
+                <ImageIcon size={14} /> 添加图片素材
              </button>
           </div>
         </section>
